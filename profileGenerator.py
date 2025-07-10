@@ -1,11 +1,6 @@
 import matplotlib.pyplot as plt
+import matplotlib.patches as ptc
 import numpy as np
-
-# x_points = np.array([1, 8])
-# y_points = np.array([3, 10])
-
-# plt.plot(x_points,y_points)
-# plt.show()
 
 #Prints out string equation for SW equation-driven curve
 def swEquation(D,dr,n,e,N):
@@ -23,7 +18,7 @@ D = 100 # mm
 N = 30
 n = N - 1
 d_fp = 5 # mm
-e = 0.8 # mm
+e = 0.85 # mm
 
 x_val = []
 y_val = []
@@ -40,7 +35,11 @@ for phi in phi_val:
 
 swEquation(D, d_fp,n,e,N)
 
-plt.plot(x_val, y_val)
+fix, ax, = plt.subplots()
+
+ax.plot(x_val, y_val)
+circle = ptc.Circle((0, e), radius=(D/2), fill=False, edgecolor='red', linewidth=2)
+ax.add_patch(circle)
 plt.grid(True)
 plt.axis('equal')
 plt.show()
