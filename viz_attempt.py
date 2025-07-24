@@ -11,6 +11,8 @@ e = 0.85 # mm
 x_val = []
 y_val = []
 phi_val = np.linspace(0, 2*np.pi, 10000, endpoint=False)
+#phase_shift = np.pi / N  # Half the lobe pitch
+#phi_val = np.linspace(0, 2*np.pi, 10000, endpoint=False) + phase_shift
 
 for phi in phi_val:
     argNum = np.sin(-n*phi)
@@ -50,12 +52,14 @@ eccenPath = plt.Circle((0,0), e, fill=False, edgecolor='brown',linestyle='--')
 
 # Plot fixed ring pins
 thetaRing = (2*np.pi)/N
-
 for pinNum in range(N):
     pin_cx = (D/2)*np.cos(pinNum*thetaRing)
     pin_cy = (D/2)*np.sin(pinNum*thetaRing)
     pin = plt.Circle((pin_cx, pin_cy), radius = d_fp/2, color='black')
     ax.add_patch(pin)
+
+base_circle = plt.Circle((0, 0), radius=D/2, edgecolor='blue', fill=False, linestyle='--')
+ax.add_patch(base_circle)
 
 ax.add_patch(shaft)
 ax.add_patch(eccenPath)
@@ -64,12 +68,27 @@ ax.set_xlim(-R, R)
 ax.set_ylim(-R, R)
 ax.set_title('Cycloidal Disc with Physical Rotation')
 
+rpm = 0.5
+omega = 2 * np.pi * rpm / 60  # rad/s
+fps = 60
+dt = 1 / fps
+
+
+
 # -----------------------------
 # Frame update function
 # -----------------------------
 def update(frame):
-    theta = 2 * np.pi * frame / total_frames        # Motor shaft angle (0 → 2π)
-    spin_angle = (1 - N) * theta                    # Actual disc rotation
+    #speed_factor = 8  # slows it to 1/4 speed
+    #theta = 0
+    #theta = (2 * np.pi * frame) / (total_frames * speed_factor)
+    t = frame * dt
+    theta = omega * t
+    #theta = 2 * np.pi * frame / total_frames        # Motor shaft angle (0 → 2π)
+    theta_offset = np.pi/N
+    spin_angle = (1 - N) * theta + theta_offset             # Actual disc rotation
+    
+    #spin_angle = 0 
 
     # Orbiting center of the disc
     cx = -e * np.cos(theta)

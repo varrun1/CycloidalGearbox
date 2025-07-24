@@ -95,7 +95,7 @@ def plotFullStatic(N, D, d_fp, x_value, y_value, e, outputPCD, d_outH, numOutPin
 
 #|||||||||||||||||||||||||||||
 # Define profile parameters
-D = 100 # mm
+D = 80 # mm
 N = 30
 n = N - 1
 d_fp = 5 # mm
