@@ -142,6 +142,7 @@ def plot_static_disc_forces_numbered(
     xp =  prof_x * cψ - prof_y * sψ
     yp =  prof_x * sψ + prof_y * cψ
 
+    # plot static disc profile 
     fig, ax = plt.subplots(figsize=(6,6))
     ax.plot(prof_x, prof_y, '-', color='0.3', lw=1, label='disc profile')
 
@@ -149,6 +150,7 @@ def plot_static_disc_forces_numbered(
     pcd_circle = plt.Circle((0, 0), radius = r_pcd, fill = False,  color='black', ls = '--')
     ax.add_patch(pcd_circle)
 
+    # Scaling-related stuff
     max_force = max(Fr.max(), Ft.max(), Fn.max())
     arrow_scale = r_pcd / max_force * 0.5
 
@@ -164,11 +166,13 @@ def plot_static_disc_forces_numbered(
         φk = θ0 + 2*np.pi*k / z_p
         xk, yk = r_pcd*np.cos(φk), r_pcd*np.sin(φk)
 
+        #unit vectors for radial, tangential and normal force
         ur = np.array([ np.cos(φk),  np.sin(φk)])
         ut = np.array([-np.sin(φk),  np.cos(φk)])
         un = np.array([ np.cos(φk + np.pi/2 + α0),
                         np.sin(φk + np.pi/2 + α0)])
 
+        #Plot vectors using quiver function
         ax.quiver(xk, yk,
                   ur[0]*Fr0*arrow_scale, ur[1]*Fr0*arrow_scale,
                   angles='xy', scale_units='xy', scale=2.5,color='C0', width=0.005)
@@ -179,7 +183,7 @@ def plot_static_disc_forces_numbered(
                   un[0]*Fn0*arrow_scale, un[1]*Fn0*arrow_scale,
                   angles='xy', scale_units='xy', scale=2.5,color='C2', width=0.005)
 
-        # here's the numbering offset slightly along the normal
+        # lobe numbering offset for each vector. change 0.20 to control offset
         num_off = un * (r_pcd * 0.20)
         ax.text(xk + num_off[0],
                 yk + num_off[1],
