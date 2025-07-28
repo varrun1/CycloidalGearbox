@@ -344,7 +344,7 @@ if __name__ == "__main__":
     np.array(profile_x), np.array(profile_y),
     )
 
-    lobeNum = 27
+    lobeNum = 27 #based on 0-indexing
     Ft_lobe = Ft[lobeNum,:] 
     # 3) call the stress routine
     sigma_b, σ_vm, c, I, FOS = lobe_root_stress_from_profile(Ft_lobe,r_pcd,np.array(profile_x), np.array(profile_y),r_shaft,web_thickness=0.008, allowable=Sy_pla)
