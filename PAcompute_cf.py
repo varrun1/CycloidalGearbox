@@ -2,6 +2,19 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 def pressure_angle_closed(theta, e, r_pin, r_pcd, zp, k):
+    """Computes pressure angle for kth lobe across range of input rotation angle (theta), using closed-form solution
+
+    Args:
+        theta (list): range of input rotation angle
+        e (float): eccentricity
+        r_pin (float): fixed roller pin radius
+        r_pcd (float): PCD radius
+        zp (int): fixed roller pin count
+        k (int): lobe number
+
+    Returns:
+        float: pressure angle for kth lobe at range of theta
+    """
     lam = r_pcd / (e * zp)
     theta_k = theta + 2 * np.pi * (k - 1) / zp
 
@@ -18,6 +31,9 @@ def pressure_angle_closed(theta, e, r_pin, r_pcd, zp, k):
     return np.arccos(num / den)
 
 def lobePlot (thetas, e, r_pin, r_pcd, zp):
+    """
+    Computes and plots all pressure angles across range of theta
+    """
     plt.figure(figsize=(8, 6))
     alpha_list = []
 
@@ -66,6 +82,9 @@ def lobePlot (thetas, e, r_pin, r_pcd, zp):
     
 
 def comparParam(thetas, e, r_pin, r_pcd, zp):
+    """
+    Compares effect of disc parameters on pressure angle
+    """
     plt.figure(figsize=(6,6))
     s = 0.05 #spacing value for eccentricity
     s2 = 5 #spacing value for PCD
@@ -112,9 +131,6 @@ def compareProfile(thetas, e, r_pin, r_pcd, zp):
     theta_max1, theta_min1, max_PA1, min_PA1 = maxMinPA(alphaD1, thetas)
     theta_max2, theta_min2, max_PA2, min_PA2 = maxMinPA(alphaD2, thetas)
 
-    #p1_label = (f"P1: e={e}, r_pin={r_pin}, r_pcd={r_pcd}, zp={zp}")
-    #p2_label = (f"P2: e={disk2[0]}, r_pin={disk2[1]}, "f"r_pcd={disk2[2]}, zp={disk2[3]}")
-
     #"""
     p1_label = (
         "Profile 1\n"
@@ -154,6 +170,9 @@ def compareProfile(thetas, e, r_pin, r_pcd, zp):
 
 
 def computePA(thetas, e, r_pin, r_pcd, zp):
+    """
+    Computes and plots single-lobe pressure angle
+    """
     plt.figure(figsize=(8,5))
     alpha = pressure_angle_closed(thetas, e, r_pin, r_pcd, zp, 1)
     alpha = np.array(alpha) # convert to numpy array
@@ -178,6 +197,11 @@ def computePA(thetas, e, r_pin, r_pcd, zp):
 
 
 def maxMinPA(alpha,thetas):
+    """Returns max & min pressure angle
+    Args:
+        alpha (list): list of pressure angles
+        thetas (list): list of input angle from 0 -> 360 
+    """
     #Compute minimum and maximum PA
     max_PA = np.degrees(alpha.max())
     theta_max = np.degrees(thetas[alpha.argmax()])
@@ -200,8 +224,8 @@ def main():
     
     #Available functions
     computePA(thetas, e, r_pin, r_pcd, zp) #compute single-lobe Pressure angle for profile 
-    #lobePlot(thetas, e, r_pin, r_pcd, zp) # plots all lobes' pressure angle variation 
-    #comparParam(thetas, e, r_pin, r_pcd, zp) #plots parameter comparison 
+    lobePlot(thetas, e, r_pin, r_pcd, zp) # plots all lobes' pressure angle variation 
+    comparParam(thetas, e, r_pin, r_pcd, zp) #plots parameter comparison 
     compareProfile(thetas, e, r_pin, r_pcd, zp) 
 
     plt.show()
