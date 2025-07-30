@@ -94,17 +94,19 @@ def shaftForces(T_input, r_shaft, Sy):
         r_shaft (_type_): shaft radius
         Sy (_type_): yield strength of material 
     """
+    print('\n--------------------------')
+    print('Shaft Force Analysis')
     #compute torsional stress 
     conversion = 1e-6
-    print('\n Shaft Force Analysis')
+    SF = 2 # allowing for print defects, etc
     J = (np.pi/2)*(r_shaft**4) #polar moment of inertia, solid CS
-    tau_max = ((T_input*r_shaft)/J)*conversion
+    tau_max = ((T_input*r_shaft)/J)*conversion #converted to MPa
     print('Expected torsional shaft load is (MPa):',np.round(tau_max,4))
 
+    print('Safety Factor (in all proceeding cals):',SF)
     #compute allowable stress using Von mises & Tresca critera
     t_allow_VM = Sy/np.sqrt(3)
     t_allow_Tresca = Sy/2
-    SF = 2 # allowing for print defects, etc
     FOS_tres = (t_allow_Tresca/(tau_max*SF))
     FOS_VM = (t_allow_VM/(tau_max*SF))
     print('VM Allowable Stress (MPa): ', np.round(t_allow_VM, 4))
@@ -116,6 +118,7 @@ def shaftForces(T_input, r_shaft, Sy):
     print('Backward Calculation')
     T_in_back = (((t_allow_Tresca/SF)/conversion)*J)/r_shaft #applied SF
     print('Allowable T_in (Nm):', np.round(T_in_back,4))
+    print('----------------------------------\n')
 
 
 def plot_static_disc_forces_numbered(
@@ -126,9 +129,9 @@ def plot_static_disc_forces_numbered(
     alpha:   np.ndarray,    # shape (z_p, Nθ)
     r_pcd:   float,         # pitch‑circle radius
     j:       int,           # index into thetas
-    prof_x:  np.ndarray,    # disc profile x,y *already* centered at (0,0)
+    prof_x:  np.ndarray,    # disc profile x,y centered at (0,0)
     prof_y:  np.ndarray,
-    scale:   float = 0.002  # tweak so arrows look nice
+    scale:   float = 0.002  # scaling for force vectors
 ):
     """ Plots force vectors on active lobes at input rotation angle, theta """
     θ0 = thetas[j]
@@ -314,13 +317,14 @@ if __name__ == "__main__":
     # design parameters
     thetas = np.linspace(0, 2*np.pi, 361)
     T_in   =  0.16      # Maximum motor torque
-    e      =  0.85/1000     # m
+    e      =  1/1000     # m
     r_pin  =  2.5/1000    # m
     r_pcd  =  40/1000     # m
     z_p    = 30
     z_out  =  8
     r_out  =  55/1000     # m
-    r_shaft = 5/1000 #m
+    r_shaft = 4/1000 #m
+    r_bearing = (28/2)/1000 #m
     disc_t = 8/1000 #m
 
     # Material parameters
@@ -402,7 +406,7 @@ if __name__ == "__main__":
 
     # Lobe root stress analysis
     Ft_lobe = Ft[lobeNum,:]
-    sigma_b, σ_vm, c, I, FOS, tau_m, sigmavm_total, FOS_t = lobe_root_stress_from_profile(Ft_lobe,r_pcd,np.array(profile_x), np.array(profile_y),r_shaft,web_thickness=disc_t, allowable=Sy_pla)
+    sigma_b, σ_vm, c, I, FOS, tau_m, sigmavm_total, FOS_t = lobe_root_stress_from_profile(Ft_lobe,r_pcd,np.array(profile_x), np.array(profile_y),r_bearing,web_thickness=disc_t, allowable=Sy_pla)
     active = ~np.isnan(sigma_b) # mask out the inactive θ’s (where Ft==0 → sigma_b is NaN)
 
     plt.figure(figsize=(15,6))

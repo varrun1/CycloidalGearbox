@@ -87,6 +87,7 @@ def plotFullStatic(N, D, d_fp, x_value, y_value, e, outputPCD, d_outH, numOutPin
     plt.grid(True)
     plt.axis('equal')
     plt.show()
+
     
 
 #-----------------------------
@@ -99,11 +100,11 @@ D = 80 # mm
 N = 30
 n = N - 1
 d_fp = 5 # mm
-e = 0.85 # mm
-output_PCD = 50
+e = 1.0 # mm
+output_PCD = 40
 d_outPin = 4
 d_outputPinHole = d_outPin + 2*e 
-N_output = 8
+N_output = 6
 
 x_val = []
 y_val = []
@@ -123,5 +124,5 @@ for phi in phi_val:
 #|||||||||||||||||||||||||||||
 #Function Calls
 plotStaticProf(x_val, y_val, D)
-plotFullStatic(N, D, d_fp, x_val,y_val, e, output_PCD, d_outputPinHole, N_output, d_outPin)
-#swEquation(D,d_fp,n,e,N) # function call for equation generator
+#plotFullStatic(N, D, d_fp, x_val,y_val, e, output_PCD, d_outputPinHole, N_output, d_outPin)
+swEquation(D,d_fp,n,e,N) # function call for equation generator

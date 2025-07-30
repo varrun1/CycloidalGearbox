@@ -122,7 +122,7 @@ def comparParam(thetas, e, r_pin, r_pcd, zp):
 def compareProfile(thetas, e, r_pin, r_pcd, zp):
     #Profile 2 Specification
     #disk1 = [e, r_pin,r_pcd,zp]
-    disk2 = [0.85,5/2,70/2,30] 
+    disk2 = [1.0,r_pin,r_pcd,zp] 
     
     plt.figure(figsize=(10,5))
     alphaD1 = pressure_angle_closed(thetas, e, r_pin, r_pcd, zp, 1)
@@ -214,7 +214,7 @@ def maxMinPA(alpha,thetas):
 
 def main():
     # Profile parameters
-    e    = 0.85  # eccentricity
+    e    = 1.0  # eccentricity
     r_pin   = 5/2    # roller radius
     r_pcd  = 80/2   # distribution-circle radius
     zp   = 30     # number of pins
@@ -225,8 +225,8 @@ def main():
     #Available functions
     computePA(thetas, e, r_pin, r_pcd, zp) #compute single-lobe Pressure angle for profile 
     lobePlot(thetas, e, r_pin, r_pcd, zp) # plots all lobes' pressure angle variation 
-    comparParam(thetas, e, r_pin, r_pcd, zp) #plots parameter comparison 
-    compareProfile(thetas, e, r_pin, r_pcd, zp) 
+    #comparParam(thetas, e, r_pin, r_pcd, zp) #plots parameter comparison 
+    #compareProfile(thetas, e, r_pin, r_pcd, zp) 
 
     plt.show()
 
