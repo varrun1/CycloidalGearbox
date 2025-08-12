@@ -36,6 +36,11 @@ def force_analysis(
    # 1: cam reaction force (constant)
     F_cam_total = T_in / e
     F_cam = F_cam_total/N_disc
+    print('Total Cam Force (N):',np.round(F_cam_total,4))
+    print('Cam Force per disc (N):',np.round(F_cam,4))
+    contactArea = 188.4956 # mm^2
+    sigma_cam = F_cam/contactArea # N/mm^2 = MPA
+    print('Average radial stress (MPA):',np.round(sigma_cam,4))
 
     # 2: distribute the radial force 
     mask   = (alpha <= (np.pi/2))                 # active‐lobe mask
@@ -100,8 +105,16 @@ def shaftForces(T_input, r_shaft, Sy):
     conversion = 1e-6
     SF = 2 # allowing for print defects, etc
     J = (np.pi/2)*(r_shaft**4) #polar moment of inertia, solid CS
-    tau_max = ((T_input*r_shaft)/J)*conversion #converted to MPa
-    print('Expected torsional shaft load is (MPa):',np.round(tau_max,4))
+    tau_max = ((T_input*r_shaft)/J) #converted to MPa
+    print('Expected nominal torsional shaft load is (MPa):',np.round(tau_max*conversion,4))
+    Kts = 2.2 #torsion SCF for sharp shoulder
+    tau_shoulder = Kts*tau_max
+    print('Expected shoulder torsional shaft load is (MPa):',np.round(tau_shoulder*conversion,4))
+    VM_shear_nom = np.sqrt(3*(tau_max**2))
+    VM_shear_S = np.sqrt(3*(tau_shoulder**2))
+    print('Von Mises Nominal Shaft stress (MPa):',np.round(VM_shear_nom*conversion,4))
+    print('Von Mises Shoulder Shaft stress (MPa):',np.round(VM_shear_S*conversion,4))
+
 
     print('Safety Factor (in all proceeding cals):',SF)
     #compute allowable stress using Von mises & Tresca critera
@@ -329,10 +342,10 @@ if __name__ == "__main__":
 
     # Material parameters
     Sy_pla = 35 # MPA 
-    Sy_petg = 34 # MPA
+    Sy_petg = 35 # MPA (UTS of PETG-CF)
 
     #disc configuration (1 = single disc FA, 2 = dual disc FA)
-    disc_Config = 1
+    disc_Config = 2
     if disc_Config == 1:
         print('Running single disc configuration')
     else: 
@@ -401,6 +414,7 @@ if __name__ == "__main__":
     plt.show()  
     """
     
+    
     #Function call for force vector plot function
     plot_static_disc_forces_numbered(thetas, Fr, Ft, Fn, alpha_total, r_pcd, j, np.array(profile_x), np.array(profile_y),)
 
@@ -437,3 +451,4 @@ if __name__ == "__main__":
     plt.grid(True)
     plt.tight_layout()
     plt.show()
+    
