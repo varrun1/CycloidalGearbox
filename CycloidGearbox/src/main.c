@@ -1,4 +1,5 @@
 #include "peripherals.h"
+#include "motor_hal.h"
 #include <string.h>
 
 int main(void)
