@@ -8,6 +8,10 @@
 #include <string.h>
 #include "stm32f4xx_hal_tim.h"
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
 #define STEPS_PER_REV 6400.0
 #define MIN_RPM 5.0
 #define MAX_RPM 20.0
@@ -40,5 +44,6 @@ double MoveByAngle(Motor *motor, double angle, double speedRPM);
 double MoveByDist(Motor *motor, double dist, double speedRPM);
 void HomeMotors(void);
 void StopMotors(void);
+void Error_Handler(void);
 
 #endif

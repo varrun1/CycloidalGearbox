@@ -1,3 +1,4 @@
+#include "stm32f4xx_hal.h"
 #include "motor_hal.h"
 // #include "controls.h"
 
@@ -69,7 +70,7 @@ void Motors_Init(void)
 
     if (HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1) != HAL_OK)
     {
-        ErrorHandler();
+        Error_Handler();
     }
 }
 
@@ -196,71 +197,56 @@ double MoveByDist(Motor *motor, double dist, double speedRPM)
 
 void StepMotor(Motor *motor)
 {
-    // IsMoving will be set to 0 if a limit switch is engaged
+    // Stop condition — exit immediately to avoid underflow & extra toggles
     if (!motor->stepsToComplete || !motor->isMoving)
     {
-        if (motor->name == motor1.name)
+        if (motor->name == motor1.name) // (see note D below)
         {
             HAL_TIM_Base_Stop_IT(&htim3);
         }
         motor->isMoving = 0;
+        return; // <-- critical
     }
 
-    /*
-    // Don't want to gain schedule when in manual mode (except on Z)
-    if (!state.manual)
+    // Gain scheduling (unchanged)
+    if (motor->stepsToComplete > motor->stepsToSpeedUp)
+        motor->currentRPM += motor->slope;
+    else if (motor->stepsToComplete < motor->stepsToSlowDown)
+        motor->currentRPM -= motor->slope;
+
+    // Recompute period
+    float timePerStep = 60.0f / (motor->currentRPM * STEPS_PER_REV * motor->reduction);
+    int32_t timerPeriod = (int32_t)((timePerStep * 1000000.0f) / 2.0f) - 1;
+    if (timerPeriod < 1)
+        timerPeriod = 1;
+    if (timerPeriod > 0xFFFF)
+        timerPeriod = 0xFFFF;
+
+    if (motor->name == motor1.name)
     {
-        if (motor->stepsToComplete > motor->stepsToSpeedUp)
-        {
-            motor->currentRPM += motor->slope;
-        }
-        else if (motor->stepsToComplete < motor->stepsToSlowDown)
-        {
-            motor->currentRPM -= motor->slope;
-        }
-
-        // Change the timer period based on the current rpm
-        float timePerStep;
-        if (motor->name == motorz.name)
-        {
-            timePerStep = 60.0 / (motor->currentRPM * Z_STEPS_PER_REV * motor->reduction); // Time per step in seconds
-        }
-        else
-        {
-            timePerStep = 60.0 / (motor->currentRPM * STEPS_PER_REV * motor->reduction); // Time per step in seconds
-        }
-        uint32_t timerPeriod = (uint32_t)((timePerStep * 1000000) / 2) - 1; // Time per toggle, in microseconds
-        // Set the new timer period
-        if (motor->name == motor1.name)
-        {
-            __HAL_TIM_SET_AUTORELOAD(&htim3, timerPeriod);
-        }
-        else if (motor->name == motor2.name)
-        {
-            __HAL_TIM_SET_AUTORELOAD(&htim4, timerPeriod);
-        }
-        else if (motor->name == motorz.name)
-        {
-            __HAL_TIM_SET_AUTORELOAD(&htim7, timerPeriod);
-        }
+        __HAL_TIM_SET_AUTORELOAD(&htim3, (uint32_t)timerPeriod);
+        __HAL_TIM_SET_COUNTER(&htim3, 0); // helps apply new ARR cleanly
     }
-    */
+
+    // Generate the step and count ONLY on rising edges
     HAL_GPIO_TogglePin(motor->stepPort, motor->stepPin);
-    motor->stepsToComplete--;
+    if (HAL_GPIO_ReadPin(motor->stepPort, motor->stepPin) == GPIO_PIN_SET)
+    {
+        motor->stepsToComplete--;
+    }
 }
 
 static void TIM3_Init(void)
 {
     __HAL_RCC_TIM3_CLK_ENABLE();
-
     htim3.Instance = TIM3;
-    htim3.Init.Prescaler = (uint32_t)((SystemCoreClock / 1000000) - 1); // 1 MHz clock
+    htim3.Init.Prescaler = (uint32_t)((SystemCoreClock / 1000000) - 1);
     htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-    htim3.Init.Period = 0xFFFF; // Max value, update frequency will be set in stepMotor()
+    htim3.Init.Period = 0xFFFF;
     htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
     HAL_TIM_Base_Init(&htim3);
 
-    HAL_NVIC_SetPriority(TIM3_IRQn, 0, 0);
+    HAL_NVIC_SetPriority(TIM3_IRQn, 5, 0); // was (0,0)
     HAL_NVIC_EnableIRQ(TIM3_IRQn);
 }
 
