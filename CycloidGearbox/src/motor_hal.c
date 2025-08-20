@@ -55,7 +55,7 @@ void Motor_Init(Motor motor)
 }
 
 /**
- * @brief Initializes all three motors and starts the timer.
+ * @brief Initializes the motor and start the timer.
  *
  */
 void Motors_Init(void)

@@ -12,9 +12,9 @@
 #define M_PI 3.14159265358979323846
 #endif
 
-#define STEPS_PER_REV 6400.0
-#define MIN_RPM 5.0
-#define MAX_RPM 20.0
+#define STEPS_PER_REV 800 // full stepping
+#define MIN_RPM 70
+#define MAX_RPM 600
 
 #define CW 0
 #define CCW 1

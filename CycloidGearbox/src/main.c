@@ -1,9 +1,9 @@
 #include "main.h"
 
 // ------- user-tunable knobs -------
-#define TARGET_RPM 120.0 // desired speed
-#define RUN_TIME_SEC 5.0 // run duration
-#define CCW_DIRECTION 1  // 1 = CCW, 0 = CW
+#define TARGET_RPM 200  // desired speed
+#define RUN_TIME_SEC 20 // run duration
+#define CCW_DIRECTION 0 // 1 = CCW, 0 = CW
 // ----------------------------------
 
 // Forward declarations if you keep them elsewhere
