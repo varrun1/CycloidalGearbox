@@ -2,14 +2,61 @@
 
 // ------- user-tunable knobs -------
 #define TARGET_RPM 400  // desired speed
-#define RUN_TIME_SEC 30 // run duration
+#define RUN_TIME_SEC 20 // run duration
 #define CCW_DIRECTION 1 // 1 = CCW, 0 = CW
 // ----------------------------------
 
 // Forward declarations if you keep them elsewhere
 void SystemClock_Config(void)
 {
-    // Your clock init here (left empty for brevity)
+    RCC_ClkInitTypeDef RCC_ClkInitStruct;
+    RCC_OscInitTypeDef RCC_OscInitStruct;
+    HAL_StatusTypeDef ret = HAL_OK;
+
+    /* Enable Power Control clock */
+    __HAL_RCC_PWR_CLK_ENABLE();
+
+    /* The voltage scaling allows optimizing the power consumption when the device is
+       clocked below the maximum system frequency, to update the voltage scaling value
+       regarding system frequency refer to product datasheet.  */
+    __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
+
+    /* Enable HSI Oscillator and activate PLL with HSI as source */
+    RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
+    RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+    RCC_OscInitStruct.HSICalibrationValue = 0x10;
+    RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+    RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
+    RCC_OscInitStruct.PLL.PLLM = 16;
+    RCC_OscInitStruct.PLL.PLLN = 360;
+    RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
+    RCC_OscInitStruct.PLL.PLLQ = 7;
+    RCC_OscInitStruct.PLL.PLLR = 6;
+    if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
+    {
+        Error_Handler();
+    }
+
+    /* Activate the OverDrive to reach the 180 MHz Frequency */
+    ret = HAL_PWREx_EnableOverDrive();
+    if (ret != HAL_OK)
+    {
+        while (1)
+        {
+            ;
+        }
+    }
+    /* Select PLL as system clock source and configure the HCLK, PCLK1 and PCLK2
+       clocks dividers */
+    RCC_ClkInitStruct.ClockType = (RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2);
+    RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+    RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+    RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
+    RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
+    if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5) != HAL_OK)
+    {
+        Error_Handler();
+    }
 }
 
 void Error_Handler(void)
@@ -64,10 +111,13 @@ int main(void)
     printf("\r\nCMD: rpm=%.1f, t=%.2fs -> revs=%.3f, angle=%.1f deg\r\n",
            (double)TARGET_RPM, (double)RUN_TIME_SEC, revs, (angle * 180.0 / M_PI));
 
+    uint32_t t0_ms = HAL_GetTick(); // just before starting the move
+
     // Command the move. The function also needs a "speedRPM" argument
     // which you want to match TARGET_RPM for steady stepping.
     // FUNCTION CALL
     //(void)MoveByAngle(&motor1, angle, TARGET_RPM);
+
     (void)MoveByAngleConst(&motor1, angle, TARGET_RPM);
 
     // Block until the motion completes (StepMotor() clears isMoving at the end)
@@ -80,8 +130,13 @@ int main(void)
     // Optionally stop timers defensively
     StopMotors();
 
+    uint32_t t1_ms = HAL_GetTick(); // right after it finishes
+    double elapsed_s = (t1_ms - t0_ms) / 1000.0;
+
     printf("DONE: motor stopped. Final revs=%.3f, angle=%.1f deg\r\n",
            (double)revs, (double)(angle * 180.0 / M_PI));
+
+    printf("Elapsed = %.3f s\r\n", elapsed_s);
 
     // Idle
     while (1)

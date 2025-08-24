@@ -62,11 +62,30 @@ void Motors_Init(void)
 {
     Motor_Init(motor1);
     TIM3_Init();
-    // TIM4_Init();
-    // TIM7_Init();
+
+    // --- Force TIM3 to 1 MHz tick ---
+    uint32_t timclk = HAL_RCC_GetPCLK1Freq();
+    RCC_ClkInitTypeDef clk;
+    uint32_t tmp;
+    HAL_RCC_GetClockConfig(&clk, &tmp);
+    if (clk.APB1CLKDivider != RCC_HCLK_DIV1)
+        timclk *= 2U; // APB1 timers double
+
+    uint32_t psc_for_10MHz = (uint32_t)((timclk + 500000U) / 1000000U) - 1U; // round to nearest
+    __HAL_TIM_SET_PRESCALER(&htim3, psc_for_10MHz);
+
+    // Ensure PSC/ARR load immediately (ARR can be any placeholder here)
+    __HAL_TIM_SET_AUTORELOAD(&htim3, 1000 - 1); // dummy ARR
+    __HAL_TIM_SET_COUNTER(&htim3, 0);
+    __HAL_TIM_CLEAR_FLAG(&htim3, TIM_FLAG_UPDATE);
+    htim3.Instance->EGR = TIM_EGR_UG; // latch PSC/ARR now
+    // ---------------------------------------------
+
+    uint32_t psc = htim3.Instance->PSC;
+    double tick_us = 1e6 * (double)(psc + 1) / (double)timclk;
+    printf("TIM3 tick = %.3f us (PSC=%lu)\r\n", tick_us, (unsigned long)psc);
 
     MX_TIM2_Init();
-    // MX_ADC1_Init();
 
     if (HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1) != HAL_OK)
     {
@@ -271,6 +290,7 @@ void StepMotor(Motor *motor)
         motor->currentRPM -= motor->slope;
 
     // Recompute period
+    // Recompute period (works for BOTH ramped and constant-speed)
     float timePerStep = 60.0f / (motor->currentRPM * STEPS_PER_REV * motor->reduction);
     int32_t timerPeriod = (int32_t)((timePerStep * 1000000.0f) / 2.0f) - 1;
     if (timerPeriod < 1)
@@ -278,10 +298,15 @@ void StepMotor(Motor *motor)
     if (timerPeriod > 0xFFFF)
         timerPeriod = 0xFFFF;
 
-    if (motor->name == motor1.name)
-    {
-        __HAL_TIM_SET_AUTORELOAD(&htim3, (uint32_t)timerPeriod);
-        __HAL_TIM_SET_COUNTER(&htim3, 0); // helps apply new ARR cleanly
+    if (motor == &motor1)
+    { // safer than comparing names
+        uint32_t newARR = (uint32_t)timerPeriod;
+        if (htim3.Instance->ARR != newARR)
+        {
+            __HAL_TIM_SET_AUTORELOAD(&htim3, newARR);
+            // DO NOT reset the counter here; ARR preload will apply on the next update automatically
+            // DO NOT write EGR=UG here either; let it update naturally at the next event
+        }
     }
 
     // Generate the step and count ONLY on rising edges
@@ -300,7 +325,12 @@ static void TIM3_Init(void)
     htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
     htim3.Init.Period = 0xFFFF;
     htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+    htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
     HAL_TIM_Base_Init(&htim3);
+
+    __HAL_TIM_SET_COUNTER(&htim3, 0);
+    __HAL_TIM_CLEAR_FLAG(&htim3, TIM_FLAG_UPDATE);
+    htim3.Instance->EGR = TIM_EGR_UG;
 
     HAL_NVIC_SetPriority(TIM3_IRQn, 5, 0); // was (0,0)
     HAL_NVIC_EnableIRQ(TIM3_IRQn);
