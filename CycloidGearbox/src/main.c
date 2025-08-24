@@ -1,9 +1,9 @@
 #include "main.h"
 
 // ------- user-tunable knobs -------
-#define TARGET_RPM 200  // desired speed
-#define RUN_TIME_SEC 20 // run duration
-#define CCW_DIRECTION 0 // 1 = CCW, 0 = CW
+#define TARGET_RPM 400  // desired speed
+#define RUN_TIME_SEC 30 // run duration
+#define CCW_DIRECTION 1 // 1 = CCW, 0 = CW
 // ----------------------------------
 
 // Forward declarations if you keep them elsewhere
@@ -62,11 +62,13 @@ int main(void)
         angle = -angle;
 
     printf("\r\nCMD: rpm=%.1f, t=%.2fs -> revs=%.3f, angle=%.1f deg\r\n",
-           TARGET_RPM, RUN_TIME_SEC, revs, (angle * 180.0 / M_PI));
+           (double)TARGET_RPM, (double)RUN_TIME_SEC, revs, (angle * 180.0 / M_PI));
 
     // Command the move. The function also needs a "speedRPM" argument
     // which you want to match TARGET_RPM for steady stepping.
-    (void)MoveByAngle(&motor1, angle, TARGET_RPM);
+    // FUNCTION CALL
+    //(void)MoveByAngle(&motor1, angle, TARGET_RPM);
+    (void)MoveByAngleConst(&motor1, angle, TARGET_RPM);
 
     // Block until the motion completes (StepMotor() clears isMoving at the end)
     while (motor1.isMoving)
@@ -79,7 +81,7 @@ int main(void)
     StopMotors();
 
     printf("DONE: motor stopped. Final revs=%.3f, angle=%.1f deg\r\n",
-           revs, (angle * 180.0 / M_PI));
+           (double)revs, (double)(angle * 180.0 / M_PI));
 
     // Idle
     while (1)

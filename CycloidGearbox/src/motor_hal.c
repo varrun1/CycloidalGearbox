@@ -138,6 +138,62 @@ double MoveByAngle(Motor *motor, double angle, double speedRPM)
     return angleToComplete;
 }
 
+double MoveByAngleConst(Motor *motor, double angle, double speedRPM)
+{
+    motor->isMoving = 1;
+
+    // Direction (your convention: +angle => CCW)
+    if (angle > 0)
+    {
+        HAL_GPIO_WritePin(motor->dirPort, motor->dirPin, CCW);
+        motor->dir = CCW;
+    }
+    else
+    {
+        HAL_GPIO_WritePin(motor->dirPort, motor->dirPin, CW);
+        motor->dir = CW;
+        angle = -angle; // use magnitude below
+    }
+
+    // Steps to move (same as before)
+    motor->stepsToComplete = (uint32_t)((angle / (2.0 * M_PI)) * STEPS_PER_REV * motor->reduction);
+
+    // ---- Disable gain scheduling / ramp completely ----
+    if (speedRPM < MIN_RPM)
+        speedRPM = MIN_RPM;
+    motor->currentRPM = speedRPM;       // fixed speed
+    motor->stepsToSpeedUp = UINT32_MAX; // accel branch can never trigger
+    motor->stepsToSlowDown = 0;         // decel branch can never trigger
+    motor->slope = 0.0;                 // no change per step
+    // ---------------------------------------------------
+
+    // Timer period for constant step rate.
+    // If your TIM3 tick = 1 µs, ARR is in microseconds.
+    // One full STEP = high + low => two toggles per step:
+    float timePerStep_s = 60.0f / (motor->currentRPM * STEPS_PER_REV * motor->reduction);
+    uint32_t timerPeriod = (uint32_t)((timePerStep_s * 1e6f) / 2.0f) - 1u;
+
+    // (Optional) clamp to keep a minimum pulse width
+    if (timerPeriod < 50u)
+        timerPeriod = 50u;
+
+    // Signed angle actually commanded (for your return)
+    double angleToComplete = (motor->stepsToComplete / (double)STEPS_PER_REV) / motor->reduction * 2.0 * M_PI;
+    if (motor->dir == CW)
+        angleToComplete = -angleToComplete;
+
+    // Program timer and start
+    // (Consider resetting the counter before start to get a clean first pulse)
+    if (motor->name == motor1.name)
+    { // (see note below)
+        __HAL_TIM_SET_AUTORELOAD(&htim3, timerPeriod);
+        __HAL_TIM_SET_COUNTER(&htim3, 0);
+        HAL_TIM_Base_Start_IT(&htim3);
+    }
+
+    return angleToComplete;
+}
+
 /*
 double MoveByDist(Motor *motor, double dist, double speedRPM)
 {

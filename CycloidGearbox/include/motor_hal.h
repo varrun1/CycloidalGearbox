@@ -12,9 +12,9 @@
 #define M_PI 3.14159265358979323846
 #endif
 
-#define STEPS_PER_REV 800 // full stepping
+#define STEPS_PER_REV 1600 // 1/8th stepping
 #define MIN_RPM 70
-#define MAX_RPM 600
+#define MAX_RPM 800
 
 #define CW 0
 #define CCW 1
@@ -41,6 +41,7 @@ extern Motor motor1;
 
 void Motors_Init(void);
 double MoveByAngle(Motor *motor, double angle, double speedRPM);
+double MoveByAngleConst(Motor *motor, double angle, double speedRPM);
 double MoveByDist(Motor *motor, double dist, double speedRPM);
 void HomeMotors(void);
 void StopMotors(void);
