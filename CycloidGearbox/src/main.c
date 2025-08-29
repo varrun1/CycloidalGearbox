@@ -1,9 +1,10 @@
 #include "main.h"
 
 // ------- user-tunable knobs -------
-#define TARGET_RPM 400  // desired speed
-#define RUN_TIME_SEC 20 // run duration
-#define CCW_DIRECTION 1 // 1 = CCW, 0 = CW
+#define TARGET_RPM 200    // desired speed
+#define RUN_TIME_SEC 20   // run duration
+#define CCW_DIRECTION 1   // 1 = CCW, 0 = CW
+#define output_angle 90.0 // in degrees
 // ----------------------------------
 
 // Forward declarations if you keep them elsewhere
@@ -80,8 +81,8 @@ void Error_Handler(void)
 }
 
 UART_HandleTypeDef huart2;
-static void MX_USART2_UART_Init(void);     // <- prototype
-int _write(int file, char *data, int len); // printf retarget (below)
+static void MX_USART2_UART_Init(void);
+int _write(int file, char *data, int len);
 
 int main(void)
 {
@@ -101,6 +102,8 @@ int main(void)
     // Initialize your motor HAL (sets up GPIO and timers, incl. TIM3 IRQ for stepping)
     Motors_Init();
 
+    // FOR MOTOR-SPACE COMMANDS
+    /*
     // Compute signed angle from RPM and time
     // revolutions = rpm * (seconds / 60), angle = 2*pi*revs
     double revs = TARGET_RPM * (RUN_TIME_SEC / 60.0);
@@ -110,15 +113,19 @@ int main(void)
 
     printf("\r\nCMD: rpm=%.1f, t=%.2fs -> revs=%.3f, angle=%.1f deg\r\n",
            (double)TARGET_RPM, (double)RUN_TIME_SEC, revs, (angle * 180.0 / M_PI));
+    */
+
+    // FOR OUTPUT-SPACE COMMAND
+    printf("\nOutput-Space Commands");
+    printf("\r\nCMD: rpm=%.1f,  angle=%.1f deg\r\n",
+           (double)TARGET_RPM, (double)output_angle);
 
     uint32_t t0_ms = HAL_GetTick(); // just before starting the move
 
-    // Command the move. The function also needs a "speedRPM" argument
-    // which you want to match TARGET_RPM for steady stepping.
-    // FUNCTION CALL
+    // FUNCTION CALLS
     //(void)MoveByAngle(&motor1, angle, TARGET_RPM);
-
-    (void)MoveByAngleConst(&motor1, angle, TARGET_RPM);
+    //(void)MoveByAngleConst(&motor1, angle, TARGET_RPM);
+    (void)MoveByOutputAngle(&motor1, output_angle * (M_PI / 180.0), TARGET_RPM); // func call to desired output angle - output space
 
     // Block until the motion completes (StepMotor() clears isMoving at the end)
     while (motor1.isMoving)
@@ -133,9 +140,10 @@ int main(void)
     uint32_t t1_ms = HAL_GetTick(); // right after it finishes
     double elapsed_s = (t1_ms - t0_ms) / 1000.0;
 
+    /*
     printf("DONE: motor stopped. Final revs=%.3f, angle=%.1f deg\r\n",
            (double)revs, (double)(angle * 180.0 / M_PI));
-
+    */
     printf("Elapsed = %.3f s\r\n", elapsed_s);
 
     // Idle

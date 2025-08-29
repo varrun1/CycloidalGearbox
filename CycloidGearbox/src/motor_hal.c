@@ -213,6 +213,69 @@ double MoveByAngleConst(Motor *motor, double angle, double speedRPM)
     return angleToComplete;
 }
 
+/// @brief Move output disc by desired angle
+/// @param motor Motor to move
+/// @param angle angle in radians
+/// @param speedRPM desired motor speed in RPM
+/// @return double
+double MoveByOutputAngle(Motor *motor, double angle, double speedRPM)
+{
+    motor->isMoving = 1;
+
+    // Direction (your convention: +angle => CCW)
+    if (angle > 0)
+    {
+        HAL_GPIO_WritePin(motor->dirPort, motor->dirPin, CCW);
+        motor->dir = CCW;
+    }
+    else
+    {
+        HAL_GPIO_WritePin(motor->dirPort, motor->dirPin, CW);
+        motor->dir = CW;
+        angle = -angle; // use magnitude below
+    }
+
+    // Steps to move (same as before)
+    double steps_f = (angle / (2.0 * M_PI)) * (STEPS_PER_REV * Output_Reduction);
+    if (steps_f < 0.5)
+        steps_f = 0.0;
+    motor->stepsToComplete = (uint32_t)(steps_f + 0.5);
+
+    // ---- Disable gain scheduling / ramp completely ----
+    if (speedRPM < MIN_RPM)
+        speedRPM = MIN_RPM;
+    if (speedRPM > MAX_RPM)
+        speedRPM = MAX_RPM;
+    motor->currentRPM = speedRPM;       // fixed speed
+    motor->stepsToSpeedUp = UINT32_MAX; // accel branch can never trigger
+    motor->stepsToSlowDown = 0;         // decel branch can never trigger
+    motor->slope = 0.0;                 // no change per step
+    // ---------------------------------------------------
+
+    // Timer period for constant step rate.
+    float timePerStep_s = 60.0f / (motor->currentRPM * STEPS_PER_REV);
+    uint32_t timerPeriod = (uint32_t)((timePerStep_s * 1e6f) / 2.0f) - 1u;
+
+    // (Optional) clamp to keep a minimum pulse width
+    if (timerPeriod < 50u)
+        timerPeriod = 50u;
+
+    // Signed angle actually commanded (for your return)
+    double angleToComplete = ((double)motor->stepsToComplete / (STEPS_PER_REV * Output_Reduction)) * 2.0 * M_PI;
+    if (motor->dir == CW)
+        angleToComplete = -angleToComplete;
+
+    // Program timer and start
+    if (motor->name == motor1.name)
+    {
+        __HAL_TIM_SET_AUTORELOAD(&htim3, timerPeriod);
+        __HAL_TIM_SET_COUNTER(&htim3, 0);
+        HAL_TIM_Base_Start_IT(&htim3);
+    }
+
+    return angleToComplete;
+}
+
 /*
 double MoveByDist(Motor *motor, double dist, double speedRPM)
 {
