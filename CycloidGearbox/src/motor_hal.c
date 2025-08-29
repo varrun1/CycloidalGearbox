@@ -276,6 +276,69 @@ double MoveByOutputAngle(Motor *motor, double angle, double speedRPM)
     return angleToComplete;
 }
 
+// ----- Repeatability (constant motor RPM, output-space commands) -----
+static void wait_until_done(Motor *m)
+{
+    while (m->isMoving)
+        HAL_Delay(1);
+}
+
+// OUTPUT degrees -> run at fixed *motor* RPM (reduction kept = 1)
+double MoveOutputByDeg_FixedMotorRPM(Motor *m, double out_deg, double motor_rpm)
+{
+    // Convert OUTPUT angle (deg) to MOTOR angle (rad)
+    double motor_angle_rad = (out_deg * (M_PI / 180.0)) * Output_Reduction;
+
+    // Clamp RPM
+    double rpm = motor_rpm;
+    if (rpm < MIN_RPM)
+        rpm = MIN_RPM;
+    if (rpm > MAX_RPM)
+        rpm = MAX_RPM;
+
+    // Execute constant-speed move in motor-space
+    return MoveByAngleConst(m, motor_angle_rad, rpm);
+}
+
+// One landing from CW approach.
+// PRECONDITION: already touching the probe (target), indicator zeroed.
+void RepeatabilityLanding_OutputCW_FixedRPM(Motor *m,
+                                            double retreat_deg,
+                                            double motor_rpm)
+{
+    // 1) Back off CCW (+retreat)
+    printf("   Back off CCW +%.3f deg\r\n", fabs(retreat_deg));
+    (void)MoveOutputByDeg_FixedMotorRPM(m, -fabs(retreat_deg), motor_rpm);
+    wait_until_done(m);
+    HAL_Delay(300); // settle
+
+    // 2) Re-approach CW (−retreat) to land again from CW
+    printf("   Re-approach CW -%.3f deg (land)\r\n", fabs(retreat_deg));
+    (void)MoveOutputByDeg_FixedMotorRPM(m, +fabs(retreat_deg), motor_rpm);
+    wait_until_done(m);
+    HAL_Delay(500); // settle, then read the dial
+}
+
+// Multiple landings for repeatability stats.
+// Start ON the probe (zeroed). Each cycle gives one CW landing.
+void RepeatabilityTest_OutputCW_FixedRPM(Motor *m,
+                                         int cycles,
+                                         double retreat_deg,
+                                         double motor_rpm)
+{
+    printf("\r\n=== Repeatability (CW approach, fixed motor RPM) ===\r\n");
+    printf("Start: ON probe, zeroed. cycles=%d, retreat=%.3f deg, motorRPM=%.1f, ratio=%.3f\r\n",
+           cycles, retreat_deg, motor_rpm, (double)Output_Reduction);
+
+    for (int i = 1; i <= cycles; ++i)
+    {
+        printf("\r\n[CYCLE %d]\r\n", i);
+        RepeatabilityLanding_OutputCW_FixedRPM(m, retreat_deg, motor_rpm);
+        // >>> Read indicator here (log value for cycle i) <<<
+    }
+    printf("\r\n=== Test complete ===\r\n");
+}
+
 /*
 double MoveByDist(Motor *motor, double dist, double speedRPM)
 {

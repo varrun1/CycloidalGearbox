@@ -1,11 +1,15 @@
 #include "main.h"
 
 // ------- user-tunable knobs -------
-#define TARGET_RPM 200    // desired speed
-#define RUN_TIME_SEC 20   // run duration
-#define CCW_DIRECTION 1   // 1 = CCW, 0 = CW
-#define output_angle 90.0 // in degrees
-// ----------------------------------
+#define TARGET_RPM 200   // desired speed
+#define RUN_TIME_SEC 20  // run duration
+#define CCW_DIRECTION 1  // 1 = CCW, 0 = CW
+#define output_angle 3.0 // in degrees
+
+const int cycles = 10;          // how many CW landings to sample
+const double retreatDeg = 45.0; // back off amount between landings
+// const double motorRPM = 200.0;  // constant motor speed you want
+//  ----------------------------------
 
 // Forward declarations if you keep them elsewhere
 void SystemClock_Config(void)
@@ -117,15 +121,15 @@ int main(void)
 
     // FOR OUTPUT-SPACE COMMAND
     printf("\nOutput-Space Commands");
-    printf("\r\nCMD: rpm=%.1f,  angle=%.1f deg\r\n",
-           (double)TARGET_RPM, (double)output_angle);
+    // printf("\r\nCMD: rpm=%.1f,  angle=%.1f deg\r\n",(double)TARGET_RPM, (double)output_angle);
 
     uint32_t t0_ms = HAL_GetTick(); // just before starting the move
 
     // FUNCTION CALLS
     //(void)MoveByAngle(&motor1, angle, TARGET_RPM);
     //(void)MoveByAngleConst(&motor1, angle, TARGET_RPM);
-    (void)MoveByOutputAngle(&motor1, output_angle * (M_PI / 180.0), TARGET_RPM); // func call to desired output angle - output space
+    //(void)MoveByOutputAngle(&motor1, output_angle * (M_PI / 180.0), TARGET_RPM); // func call to desired output angle - output space
+    RepeatabilityTest_OutputCW_FixedRPM(&motor1, cycles, retreatDeg, TARGET_RPM);
 
     // Block until the motion completes (StepMotor() clears isMoving at the end)
     while (motor1.isMoving)

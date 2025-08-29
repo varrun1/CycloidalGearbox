@@ -45,6 +45,16 @@ double MoveByAngle(Motor *motor, double angle, double speedRPM);
 double MoveByAngleConst(Motor *motor, double angle, double speedRPM);
 double MoveByOutputAngle(Motor *motor, double angle, double speedRPM);
 double MoveByDist(Motor *motor, double dist, double speedRPM);
+double MoveOutputByDeg_FixedMotorRPM(Motor *m, double out_deg, double motor_rpm);
+void RepeatabilityLanding_OutputCW_FixedRPM(Motor *m,
+                                            double retreat_deg,
+                                            double motor_rpm);
+
+void RepeatabilityTest_OutputCW_FixedRPM(Motor *m,
+                                         int cycles,
+                                         double retreat_deg,
+                                         double motor_rpm);
+
 void HomeMotors(void);
 void StopMotors(void);
 void Error_Handler(void);
