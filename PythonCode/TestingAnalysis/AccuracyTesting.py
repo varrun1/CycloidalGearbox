@@ -28,7 +28,6 @@ def metrics_row(y_deg, x_deg=outputA_ideal_deg):
     )
 
 #Theoretical Data
- 
 outputA_ideal_rad = outputA_ideal_deg * (np.pi/180.0)
 d_ideal = L*np.sin(outputA_ideal_rad)
 arcmin_ideal = outputA_ideal_deg*arcmin_conversion
@@ -56,7 +55,7 @@ labels  = ["Set 1", "Set 2", "Set 3"]
 plt.figure()
 for i, measured_deg in enumerate(outputA_measured_deg):
     plt.plot(outputA_ideal_deg, measured_deg, marker="o", linestyle="-", label=labels[i])
-plt.plot(outputA_ideal_deg, outputA_ideal_deg, linestyle="--", label="Ideal y=x")
+plt.plot(outputA_ideal_deg, outputA_ideal_deg, linestyle="--", label="Ideal")
 plt.xlabel("Commanded (deg)")
 plt.ylabel("Measured (deg)")
 plt.title("Measured vs Commanded (overlay)")
@@ -65,8 +64,10 @@ plt.grid(True); plt.legend(); plt.tight_layout()
 
 plt.figure()
 for i, error in enumerate(error_arcmin):
-    plt.plot(outputA_ideal_deg, error, marker="o", linestyle="-", label=labels[i])
-plt.axhline(0, linestyle="--", linewidth=1)
+    #plt.plot(outputA_ideal_deg, error, marker="o", linestyle="-", label=labels[i])
+    plt.scatter(outputA_ideal_deg, error, label=labels[i], s=40)
+plt.axhline(0, linestyle="--", linewidth=1, color = 'red')
+plt.ylim(-10, 10)
 plt.xlabel("Commanded (deg)")
 plt.ylabel("Error (arcmin)")
 plt.title("Residuals vs Commanded")
@@ -76,7 +77,6 @@ plt.grid(True); plt.legend(); plt.tight_layout()
 print('\nSummary Table')
 summary = pd.DataFrame([metrics_row(row) for row in outputA_measured_deg], index=labels)
 print(summary.round(4))
-
 plt.show()
 
 # Most important in this table would be RSME_arcmin and MaxAbs_arcmin (most relevant to EDS)
