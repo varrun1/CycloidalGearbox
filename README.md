@@ -2,8 +2,8 @@
 
 This repo contains two complementary parts:
 
-1. **STM32 Nucleo firmware** to drive a motor through a cycloidal reducer and run motion test routines (accuracy, repeatability, backlash, ratio).
-2. **Python analysis tools** for pre‑design calculations and post‑test data analysis/visualization.
+1. **STM32 Nucleo firmware** to drive a stepper motor through my cycloidal reducer and run motion test routines (accuracy, repeatability, backlash, ratio).
+2. **Python analysis tools** for my pre‑design calculations/visualization and post‑test data analysis.
 
 It’s meant as a complete loop: **command motions → measure → analyze → iterate**.
 
@@ -13,7 +13,7 @@ It’s meant as a complete loop: **command motions → measure → analyze → i
 
 ```
 .
-├─ Nucleo/                     # MCU firmware (STM32 HAL)  ← put your CubeIDE project here
+├─ CycloidGearbox/                     # MCU firmware (STM32 HAL)  ← put your CubeIDE project here
 │  ├─ main.c / main.h
 │  ├─ motor_hal.c / motor_hal.h
 │  └─ ... (timer ISR, GPIO dir, constants, config)
@@ -90,11 +90,10 @@ python TestingAnalysis/RatioTesting.py
 
 - Input: one or more arrays of dial readings (mm) or pre‑converted arcminutes.
 - Conversion (if using mm at radius `r_mm`):
-  \f[\theta_{\text{arcmin}} = s_{\text{mm}}\cdot\frac{10800}{\pi r_{\text{mm}}}\f]
+  $\theta_{\text{arcmin}} = s_{\text{mm}}\cdot\frac{10800}{\pi\,r_{\text{mm}}}$
 - Metrics reported (arcmin): **mean (bias)**, **σ (sample std, ddof=1)**, **MAE**, **RMSE**, **Max|err|**, **N**.
 - Plots:
   - **Strip (dot) plot** per set with **mean ±1σ** (stacked duplicates, no random jitter).
-  - **Run chart** vs trial # (looks for drift/warm‑up).
 
 ### Backlash (`TestingAnalysis/Backlash.py`)
 **Question:** What’s the bidirectional **lost motion** at a target when approaching from CW vs CCW?
@@ -108,7 +107,7 @@ python TestingAnalysis/RatioTesting.py
   - Plots: paired A/B with **light‑grey connectors**; scatter of **|A−B|** per trial with mean line.
 
 ### Accuracy (`TestingAnalysis/AccuracyTesting.py`)
-**Question:** How accurate is the angle vs command (e.g., 1–5°)?
+**Question:** How accurate is the output angle vs command (e.g., 1–5°)?
 
 - Convert dial travel (mm) at radius `r_mm` → degrees:
   \f[\theta_{\deg} = \frac{s}{r}\cdot\frac{180}{\pi}\f]
@@ -151,19 +150,6 @@ python TestingAnalysis/RatioTesting.py
 
 ---
 
-## Efficiency (what ratio testing is **not**)
-
-Efficiency needs **power**, not just speed ratio:
-\(
-\eta = \frac{P_\text{out}}{P_\text{in}} = \frac{\tau_\text{out}\omega_\text{out}}{\tau_\text{in}\omega_\text{in}}
-\).
-Practical measurement paths:
-- Known **output torque** (e.g., hanging mass at radius) + **motor torque** from torque sensor or motor model/phase current.
-- Back‑to‑back gearboxes and measure net input/output power.
-
-The ratio script helps **calibrate** kinematics; it doesn’t yield η directly.
-
----
 
 ## Dial‑indicator setup notes
 
@@ -173,24 +159,6 @@ The ratio script helps **calibrate** kinematics; it doesn’t yield η directly.
 - With a **0.01 mm** dial at **150 mm**, one tick = **0.229 arcmin** → measurements may be **resolution‑limited**.
 
 ---
-
-## Roadmap / TODO
-
-- [ ] Add `argparse` to Python scripts (radius, data files, output dir).
-- [ ] Save figures/tables to `./out/` with timestamps.
-- [ ] Optional: Jupyter notebooks mirroring the `.py` scripts.
-- [ ] Firmware: add absolute‑target backlash routine and a UART prompt for logging readings.
-- [ ] CI: simple lint/format check.
-
----
-
-## License
-
-Choose a license (MIT is common for this type of project). Example:
-
-```
-MIT License — see LICENSE for details.
-```
 
 ---
 
