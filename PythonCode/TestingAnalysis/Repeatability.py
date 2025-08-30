@@ -82,10 +82,3 @@ summary = pd.DataFrame([metrics_row(row) for row in arr], index=labels)
 print("\nSummary Table")
 print(summary.round(4))
 plt.show()
-
-
-
-
-
-
-

@@ -370,9 +370,9 @@ if __name__ == "__main__":
     plt.tight_layout()
     plt.show()
 
-    j = 0  # index corresponding to theta (input angle)
+    j = 90  # index corresponding to theta (input angle)
 
-    """
+    
     # plot cam force & per‐pin output force
     plt.figure(figsize=(6,3))
     plt.plot(np.degrees(thetas), F_cam * np.ones_like(thetas), "--", label="F_cam")
@@ -412,7 +412,7 @@ if __name__ == "__main__":
     plt.legend()
     plt.grid(True)
     plt.show()  
-    """
+    
     
     
     #Function call for force vector plot function
