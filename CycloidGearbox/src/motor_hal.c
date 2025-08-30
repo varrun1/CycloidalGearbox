@@ -283,7 +283,6 @@ static void wait_until_done(Motor *m)
         HAL_Delay(1);
 }
 
-// OUTPUT degrees -> run at fixed *motor* RPM (reduction kept = 1)
 double MoveOutputByDeg_FixedMotorRPM(Motor *m, double out_deg, double motor_rpm)
 {
     // Convert OUTPUT angle (deg) to MOTOR angle (rad)
@@ -302,29 +301,39 @@ double MoveOutputByDeg_FixedMotorRPM(Motor *m, double out_deg, double motor_rpm)
 
 // One landing from CW approach.
 // PRECONDITION: already touching the probe (target), indicator zeroed.
-void RepeatabilityLanding_OutputCW_FixedRPM(Motor *m,
-                                            double retreat_deg,
-                                            double motor_rpm)
+void Landing_FromCW(Motor *m, double retreat_deg, double motor_rpm)
 {
     // 1) Back off CCW (+retreat)
     printf("   Back off CCW +%.3f deg\r\n", fabs(retreat_deg));
-    (void)MoveOutputByDeg_FixedMotorRPM(m, -fabs(retreat_deg), motor_rpm);
+    (void)MoveOutputByDeg_FixedMotorRPM(m, +fabs(retreat_deg), motor_rpm);
     wait_until_done(m);
     HAL_Delay(300); // settle
 
     // 2) Re-approach CW (−retreat) to land again from CW
     printf("   Re-approach CW -%.3f deg (land)\r\n", fabs(retreat_deg));
+    (void)MoveOutputByDeg_FixedMotorRPM(m, -fabs(retreat_deg), motor_rpm);
+    wait_until_done(m);
+    HAL_Delay(1000); // settle, then read the dial
+}
+
+void Landing_FromCCW(Motor *m, double retreat_deg, double motor_rpm)
+{
+    // Back off CW (-retreat)
+    printf("   Back off CW  -%.3f deg\n", fabs(retreat_deg));
+    (void)MoveOutputByDeg_FixedMotorRPM(m, -fabs(retreat_deg), motor_rpm);
+    wait_until_done(m);
+    HAL_Delay(300);
+
+    // Re-approach CCW (+retreat) to land from CCW
+    printf("   Approach CCW +%.3f deg  [LAND]\n", fabs(retreat_deg));
     (void)MoveOutputByDeg_FixedMotorRPM(m, +fabs(retreat_deg), motor_rpm);
     wait_until_done(m);
-    HAL_Delay(500); // settle, then read the dial
+    HAL_Delay(1000); // read dial now
 }
 
 // Multiple landings for repeatability stats.
 // Start ON the probe (zeroed). Each cycle gives one CW landing.
-void RepeatabilityTest_OutputCW_FixedRPM(Motor *m,
-                                         int cycles,
-                                         double retreat_deg,
-                                         double motor_rpm)
+void RepeatabilityTest_OutputCW_FixedRPM(Motor *m, int cycles, double retreat_deg, double motor_rpm)
 {
     printf("\r\n=== Repeatability (CW approach, fixed motor RPM) ===\r\n");
     printf("Start: ON probe, zeroed. cycles=%d, retreat=%.3f deg, motorRPM=%.1f, ratio=%.3f\r\n",
@@ -333,68 +342,40 @@ void RepeatabilityTest_OutputCW_FixedRPM(Motor *m,
     for (int i = 1; i <= cycles; ++i)
     {
         printf("\r\n[CYCLE %d]\r\n", i);
-        RepeatabilityLanding_OutputCW_FixedRPM(m, retreat_deg, motor_rpm);
+        Landing_FromCW(m, retreat_deg, motor_rpm);
         // >>> Read indicator here (log value for cycle i) <<<
     }
     printf("\r\n=== Test complete ===\r\n");
 }
 
-/*
-double MoveByDist(Motor *motor, double dist, double speedRPM)
+void BacklashTest_FixedRPM(Motor *m, int cycles, double retreat_deg, double motor_rpm)
 {
-    if (dist > 0)
-    {
-        HAL_GPIO_WritePin(motor->dirPort, motor->dirPin, CCW);
-        motor->dir = CCW;
-    }
-    else
-    {
-        HAL_GPIO_WritePin(motor->dirPort, motor->dirPin, CW);
-        motor->dir = CW;
-        dist = dist * -1;
-    }
-    double revs = dist / Z_MM_PER_REV;
-    motor->stepsToComplete = (uint32_t)(revs * Z_STEPS_PER_REV);
+    // const double mm_to_arcmin = 10800.0 / (M_PI * radius_mm);
 
-    // Gain scheduling setup
-    // Speed up for first 1/4 steps
-    motor->stepsToSpeedUp = 3.0 / 4.0 * motor->stepsToComplete;
-    // Slow down for last 1/4 steps
-    motor->stepsToSlowDown = 1.0 / 4.0 * motor->stepsToComplete;
-    // RPM delta per step
-    motor->slope = (speedRPM - MIN_RPM) / (motor->stepsToSlowDown);
-    // Start at the min rpm
-    motor->currentRPM = MIN_RPM;
+    printf("\n=== Backlash Test (fixed motor RPM) ===\n");
+    printf("Start ON probe, zeroed. cycles=%d, retreat=%.3f deg, motorRPM=%.1f\n", cycles, retreat_deg, motor_rpm);
+    // printf("Convert dial Δ(mm) → arcmin: Δ(mm) × %.6f (arcmin/mm)\n", mm_to_arcmin);
+    printf("Sequence per cycle: CW-landing (read A), CCW-landing (read B) → backlash = |A-B|.\n");
 
-    // If we are in manual, set speed to desired speed right away
-    if (state.manual)
+    for (int i = 1; i <= cycles; ++i)
     {
-        motor->currentRPM = speedRPM;
-    }
-    else
-    {
-        motor->currentRPM = MIN_RPM;
+        printf("\n[CYCLE %d]\n", i);
+
+        printf(" CW-landing:\n");
+        Landing_FromCW(m, retreat_deg, motor_rpm);
+        // >>> Read dial here → record A_i (mm)
+        printf("Read dial here → record A_i (mm)\n");
+
+        printf(" CCW-landing:\n");
+        Landing_FromCCW(m, retreat_deg, motor_rpm);
+        // >>> Read dial here → record B_i (mm)
+        printf("Read dial here → record B_i (mm)\n");
+
+        // Tip for your log: Backlash_i_arcmin = fabs(A_i - B_i) * mm_to_arcmin
     }
 
-    float timePerStep = 60.0 / (motor->currentRPM * Z_STEPS_PER_REV);   // Time per step in seconds
-    uint32_t timerPeriod = (uint32_t)((timePerStep * 1000000) / 2) - 1; // Time per toggle, in microseconds
-    motor->isMoving = 1;
-
-    double distToComplete = motor->stepsToComplete / Z_STEPS_PER_REV * Z_MM_PER_REV;
-    if (motor->dir == CW)
-    {
-        distToComplete = distToComplete * -1;
-    }
-
-    if (motor->name == motorz.name)
-    {
-        __HAL_TIM_SET_AUTORELOAD(&htim7, timerPeriod);
-        HAL_TIM_Base_Start_IT(&htim7);
-    }
-
-    return distToComplete;
+    printf("\n=== Backlash Test complete ===\n");
 }
-*/
 
 void StepMotor(Motor *motor)
 {

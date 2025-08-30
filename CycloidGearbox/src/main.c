@@ -6,9 +6,9 @@
 #define CCW_DIRECTION 1  // 1 = CCW, 0 = CW
 #define output_angle 3.0 // in degrees
 
-const int cycles = 10;          // how many CW landings to sample
-const double retreatDeg = 45.0; // back off amount between landings
-// const double motorRPM = 200.0;  // constant motor speed you want
+const int cycles = 10;         // how many CW landings to sample
+const double retreatDeg = 5.0; // back off amount between landings
+
 //  ----------------------------------
 
 // Forward declarations if you keep them elsewhere
@@ -129,7 +129,8 @@ int main(void)
     //(void)MoveByAngle(&motor1, angle, TARGET_RPM);
     //(void)MoveByAngleConst(&motor1, angle, TARGET_RPM);
     //(void)MoveByOutputAngle(&motor1, output_angle * (M_PI / 180.0), TARGET_RPM); // func call to desired output angle - output space
-    RepeatabilityTest_OutputCW_FixedRPM(&motor1, cycles, retreatDeg, TARGET_RPM);
+    // RepeatabilityTest_OutputCW_FixedRPM(&motor1, cycles, retreatDeg, TARGET_RPM);
+    BacklashTest_FixedRPM(&motor1, cycles, retreatDeg, TARGET_RPM);
 
     // Block until the motion completes (StepMotor() clears isMoving at the end)
     while (motor1.isMoving)
