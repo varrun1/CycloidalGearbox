@@ -91,7 +91,7 @@ def comparParam(thetas, e, r_pin, r_pcd, zp):
     center_e = e
     center_pcd = r_pcd
     eccen_test = [center_e-2*s, center_e-1*s,center_e,center_e+s, center_e+2*s]
-    pcd_test = [center_pcd-2*s2, center_pcd-1*s2,center_pcd,center_pcd+s2, center_pcd+2*s2]
+    pcd_test = [center_pcd-1*s2,center_pcd,center_pcd+s2, center_pcd+2*s2]
 
     plt.subplot(2,1,1)
     for i in range(len(eccen_test)):
