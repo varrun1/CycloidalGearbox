@@ -104,6 +104,64 @@ python TestingAnalysis/RatioTesting.py
 ```
 
 ---
+## Pre‑design analysis (`PythonCode/`)
+
+These scripts help you size and analyze the cycloidal stage **before** building it. They live under `PythonCode/` (separate from `PythonCode/TestingAnalysis/` which is post‑testing).
+
+### 1) Profile Generator — `profileGenerator.py`
+**Question:** Generate cycloid **XY profile** & gearbox diagram for pre-CAD visualization.
+
+- **Inputs:** lobe count \(N\), Fixed Ring Pin PCD (D), eccentricity \(e\), fixed ring pin diameter \(d_fp\).
+- **Outputs:** static plot of cycloid profile centered at (0,0), static plot of gearbox diagram.
+- **Parametric form (insert your exact equations):**
+  $$
+  x(\theta)=x_0+f_x(\theta;Z,e,r,r_p), \qquad
+  y(\theta)=y_0+f_y(\theta;Z,e,r,r_p)
+  $$
+---
+
+### 2) Pressure Angle — Closed Form — `PAcompute_cf.py`
+**Question:** Closed‑form expression for \(\alpha(\theta)\); what are its **max/min/RMS** values?
+
+- **Inputs:** same geometry; optional analytic mode flags.
+- **Outputs:** table of \(\alpha_\text{max}\), \(\alpha_\text{min}\), \(\alpha_\text{rms}\); optional CSV; quick text summary.
+- **Closed‑form slot (paste your final formula):**
+  $$
+  \alpha(\theta)=\arctan\!\Big(\frac{f_1(\theta; e,r,r_p,Z,\ldots)}{f_2(\theta; e,r,r_p,Z,\ldots)}\Big)
+  $$
+
+---
+
+### 3) Force Analysis — `FA.py`
+**Question:** How are contact forces shared across lobes/pins as the rotor turns? What are the peaks?
+
+- **Inputs (typical):** output torque \(T_\text{out}\), radii \(r\), lobe/pin count \(Z\), eccentricity \(e\), pin/roller radius \(r_p\), friction \(\mu\) (optional), sample angles \(\theta\in[0,2\pi)\).
+- **Outputs:**  
+  • Normal force map \(F_n(k,\theta)\) (lobe \(k\) vs. angle \(\theta\))  
+  • Engaged‑count vs. \(\theta\), per‑lobe peak/mean forces, uniformity metrics (e.g., CV)  
+  • Figures: heat map, engaged‑count plot, peak‑per‑lobe bar chart (save to `docs/figures/`)
+- **Core relations (fill in for your geometry):**
+  $$
+  \sum_k F_t(k,\theta)\,r_k(\theta)=T_\text{out}, \qquad
+  F_t(k,\theta)=F_n(k,\theta)\,\sin\!\big(\phi_k(\theta)\big)
+  $$
+
+---
+
+### 4) Pressure‑Angle Visualization — `PA_viz.py`
+**Question:** What is the instantaneous **pressure angle** and geometry at contact as the rotor turns?
+
+- **Inputs:** geometry (radii, \(e\), counts), \(\theta\) sampling, optional clearances.
+- **Outputs:** plots of pressure angle \(\alpha(\theta)\), annotated geometry snapshots; optional CSV of \((\theta,\alpha)\).
+- **Definition (adapt sign convention as needed):**
+  $$
+  \alpha(\theta)=\angle\!\big(\,\text{contact normal},\ \text{tangent to motion}\,\big)
+  $$
+
+---
+
+
+
 
 ## What the analysis scripts do
 
