@@ -134,6 +134,16 @@ These scripts help you size and analyze the cycloidal stage **before** building 
     2. Instantaneous Multi-Tooth Average Pressure Angle - effective pressure angle at a given input rotation, considering **all simultaneously** engaged pins
     3. Pressure Angle vs. profile parameter - observe the effect of parameters (e, r<sub>pcd</sub>, etc) on Pressure Angle
 - **Closed‑form formula for Pressure Angle at k<sup>th</sup> lobe:**
+  α(θ) = ∠( contact normal , tangent to motion )
+  λ = r<sub>pcd</sub> / ( e · z<sub>p</sub> )
+
+  θ<sub>k</sub> = θ + 2π (k − 1) / z<sub>p</sub>
+
+  A = 1 + λ<sup>2</sup> − 2λ cos(θ<sub>k</sub>)
+
+  α<sub>k</sub> = [ −sin(θ<sub>k</sub>) · A<sup>−1/2</sup> ]  
+     / √[ 1 − 2 ( r<sub>pin</sub> / r<sub>pcd</sub> ) ( λ − cos(θ<sub>k</sub>) ) · A<sup>−1/2</sup> + ( r<sub>pin</sub> / r<sub>pcd</sub> )<sup>2</sup> ]
+
   $$
   \alpha(\theta)=\angle\!\big(\,\text{contact normal},\ \text{tangent to motion}\,\big)
   $$
