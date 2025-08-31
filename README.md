@@ -13,25 +13,34 @@ It’s meant as a complete loop: **command motions → measure → analyze → i
 
 ```
 .
-├─ CycloidGearbox/                     # MCU firmware (STM32 HAL)  ← put your CubeIDE project here
-│  ├─ main.c / main.h
-│  ├─ motor_hal.c / motor_hal.h
-│  └─ ... (timer ISR, GPIO dir, constants, config)
+├─ CycloidGearbox/                 # Firmware (PlatformIO + STM32 HAL)
+│  ├─ platformio.ini               # board/framework/upload settings
+│  ├─ src/
+│  │  ├─ main.c                    # main source code
+│  │  └─ motor_hal.c               # source code for stepper motor functions
+│  ├─ include/
+│  │  ├─ main.h
+│  │  └─ motor_hal.h
+│  └─ lib/                         # reusable libs
+│  └─ .pio/                        # build artifacts (ignored)
 │
-├─ TestingAnalysis/            # Python analysis (post‑processing)
-│  ├─ AccuracyTesting.py       # absolute accuracy vs commanded angle
-│  ├─ Backlash.py              # bidirectional backlash / lost‑motion analysis
-│  ├─ RatioTesting.py          # speed/ratio comparisons (measured vs theoretical)
-│  ├─ Repeatability.py         # same‑direction landing repeatability
-│  └─ ShaftTesting.py          # shaft/runout checks (optional)
+├─ PythonCode/
+│  ├─ TestingAnalysis/             # post-testing analysis
+│  │  ├─ AccuracyTesting.py        # absolute accuracy vs commanded angle
+│  │  ├─ Backlash.py               # bidirectional backlash / lost-motion
+│  │  ├─ RatioTesting.py           # speed/ratio comparisons
+│  │  ├─ Repeatability.py          # same-direction landing repeatability
+│  │  └─ ShaftTesting.py           # empirical shaft torsion testing
+│  ├─ FA.py                        # pre-design: force analysis tool
+│  ├─ PA_viz.py                    # pre-design: profile/geometry visualization
+│  ├─ PAcompute_cf.py              # pre-design: pressure angle analysis - closed form
+│  ├─ PAcompute_vec.py             # pre-design: pressure angle analysis - vector form
+│  ├─ profileGenerator.py          # pre-design: generate cycloidal profiles
+│  └─ viz_attempt.py               # Misc viz utilities
 │
-├─ FA.py                       # pre‑design: force analysis helpers
-├─ PA_viz.py                   # pre‑design: profile/geometry visualization
-├─ PAcompute_cf.py             # pre‑design: compute calibration factor(s)
-├─ PAcompute_vec.py            # pre‑design: vectorized profile computations
-├─ profileGenerator.py         # pre‑design: generate cycloidal profiles
-├─ viz_attempt.py              # scratch viz utilities
+├─ docs/                           # images/figures for README 
 └─ README.md
+
 ```
 > Tip: add screenshots/figures in `docs/` and reference them here.
 
@@ -41,20 +50,33 @@ Example screenshots (replace with your own):
 
 ---
 
-## Firmware overview (STM32 Nucleo)
+## Firmware overview (PlatformIO + STM32 Nucleo)
 
-- Tooling: **STM32CubeIDE** (or GCC/Make + HAL).
+- Tooling: **PlatformIO** in VS Code
+- File layout: sources in `CycloidGearbox/src/`, headers in `CycloidGearbox/include/`
 - Direction convention used across code & analysis: **+angle = CCW**, **−angle = CW**.
 - Key routines (in `motor_hal.c`):
-  - `MoveByAngleConst(motor, motor_angle_rad, motor_rpm)` — constant step rate at the **motor**.
-  - `MoveOutputByDeg_FixedMotorRPM(motor, out_deg, motor_rpm)` — output‑space move using the gear ratio.
+  - `MoveByAngle(motor,motor_angle_rad, motor_rpm)` — speed ramping to specified motor RPM in the **motor-space**.
+  - `MoveByAngleConst(motor, motor_angle_rad, motor_rpm)` — constant motor RPM at the **motor-space**.
+  - `MoveOutputByDeg_FixedMotorRPM(motor, out_deg, motor_rpm)` — output‑space move by specified angle using the reduction.
+  - `StepMotor(motor)` — ISR tick that updates step rate, pulses STEP, and stops when done.
   - **Test helpers** (used during measurements):
     - `Landing_FromCW(...)`, `Landing_FromCCW(...)` — retreat then re‑approach from a given side.
+    - `RepeatabilityTest_OutputCW_FixedRPM(...)` — orchestrates multiple landings in same direction at constant motor RPM.
     - `BacklashTest_FixedRPM(...)` — orchestrates CW/CCW landings at a constant motor RPM.
 - Safety / setup:
   - Mount the dial indicator **tangentially** to the arm’s path (perpendicular to radius).
   - Start **touching the probe**, dial **zeroed**, before running a landing routine.
   - Use a modest retreat (**2–3°**) and a constant, gentle **motor RPM**.
+
+**Example** `platformio.ini`:
+```bash
+[env:nucleo_f446re]          ; change to your exact board ID
+platform = ststm32
+board = nucleo_f446re        ; e.g. nucleo_f401re, nucleo_l476rg, nucleo_g431rb
+framework = stm32cube
+monitor_speed = 9600
+```
 
 ---
 
@@ -110,7 +132,7 @@ python TestingAnalysis/RatioTesting.py
 **Question:** How accurate is the output angle vs command (e.g., 1–5°)?
 
 - Convert dial travel (mm) at radius `r_mm` → degrees:
-  \f[\theta_{\deg} = \frac{s}{r}\cdot\frac{180}{\pi}\f]
+  $\theta\;[^\circ] = \frac{s}{r}\cdot\frac{180}{\pi}$
 - Fit measured vs commanded. Report:
   - **slope** (scale error), **intercept** (offset), **R²**,
   - **RMSE/MAE/Max|err|** (arcmin),
@@ -131,12 +153,6 @@ python TestingAnalysis/RatioTesting.py
   ```python
   theta_deg    = (mm / r_mm) * (180.0/np.pi)
   theta_arcmin = mm * (10800.0 / (np.pi * r_mm))  # direct mm→arcmin
-  ```
-
-- **Backlash from paired A/B (mm)**
-  ```python
-  d_arcmin        = (A - B) * (10800.0 / (np.pi * r_mm))   # signed bias
-  backlash_arcmin = np.abs(A - B) * (10800.0 / (np.pi * r_mm))  # magnitude
   ```
 
 - **Repeatability metrics (array `e` in arcmin)**
