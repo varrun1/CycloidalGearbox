@@ -71,9 +71,9 @@ Example screenshots (replace with your own):
 
 **Example** `platformio.ini`:
 ```bash
-[env:nucleo_f446re]          ; change to your exact board ID
+[env:nucleo_f446re]          // change to your exact board ID
 platform = ststm32
-board = nucleo_f446re        ; e.g. nucleo_f401re, nucleo_l476rg, nucleo_g431rb
+board = nucleo_f446re        // e.g. nucleo_f401re, nucleo_l476rg, nucleo_g431rb
 framework = stm32cube
 monitor_speed = 9600
 ```
@@ -111,23 +111,48 @@ These scripts help you size and analyze the cycloidal stage **before** building 
 ### 1) Profile Generator — `profileGenerator.py`
 **Question:** Generate cycloid **XY profile** & gearbox diagram for pre-CAD visualization.
 
-- **Inputs:** lobe count \(N\), Fixed Ring Pin PCD (D), eccentricity \(e\), fixed ring pin diameter \(d_fp\).
-- **Outputs:** static plot of cycloid profile centered at (0,0), static plot of gearbox diagram.
-- **Parametric form (insert your exact equations):**
+- **Inputs:** Fixed Ring Pin Count (N), Fixed Ring Pin PCD (D), eccentricity (e), fixed ring pin diameter d<sub>r</sub>, shaft angle ($\gamma$).
+- **Outputs:** static plot of cycloid profile centered at (0,0), static plot of gearbox diagram (with ring pins, output pins) in 2-disc configuration.
+- **Parametric form:**
   $$
-  x(\theta)=x_0+f_x(\theta;Z,e,r,r_p), \qquad
-  y(\theta)=y_0+f_y(\theta;Z,e,r,r_p)
+  x = \frac{D}{2}\cos(\varphi) - \frac{d_r}{2}\cos(\varphi + \gamma) - e \cos(N\varphi)
+  $$
+  $$
+  y = -\frac{D}{2}\sin(\varphi) + \frac{d_r}{2}\sin(\varphi + \gamma) + e \sin(N\varphi)
+  $$
+  $$
+  \gamma = \frac{\sin(-n\varphi)}{\tfrac{D}{2eN} - \cos(-n\varphi)}
   $$
 ---
 
 ### 2) Pressure Angle — Closed Form — `PAcompute_cf.py`
 **Question:** Closed‑form expression for \(\alpha(\theta)\); what are its **max/min/RMS** values?
 
-- **Inputs:** same geometry; optional analytic mode flags.
-- **Outputs:** table of \(\alpha_\text{max}\), \(\alpha_\text{min}\), \(\alpha_\text{rms}\); optional CSV; quick text summary.
-- **Closed‑form slot (paste your final formula):**
+- **Inputs:** same geometry as `profileGenerator.py`.
+- **Outputs:** 3 plots related to pressure angle analysis: 
+    1. Pressure Angle vs. input rotation angle for any given lobe
+    2. Instantaneous Multi-Tooth Average Pressure Angle - effective pressure angle at a given input rotation, considering **all simultaneously** engaged pins
+    3. Pressure Angle vs. profile parameter - observe the effect of parameters (e, r<sub>pcd</sub>, etc) on Pressure Angle
+- **Closed‑form formula for Pressure Angle at k<sup>th</sup> lobe:**
   $$
-  \alpha(\theta)=\arctan\!\Big(\frac{f_1(\theta; e,r,r_p,Z,\ldots)}{f_2(\theta; e,r,r_p,Z,\ldots)}\Big)
+  \alpha(\theta)=\angle\!\big(\,\text{contact normal},\ \text{tangent to motion}\,\big)
+  $$
+
+  $$
+  \lambda = \frac{r_{pcd}}{e \cdot z_p}
+  $$
+
+  $$
+  \theta_k = \theta + 2\pi \frac{k-1}{z_p}
+  $$
+
+  $$
+  A = 1 + \lambda^2 - 2\lambda \cos(\theta_k)
+  $$
+
+  $$
+  \alpha_k = \frac{-\sin(\theta_k)\,A^{-1/2}}
+  {\sqrt{1 - 2\left(\tfrac{r_{pin}}{r_{pcd}}\right)(\lambda - \cos(\theta_k))\,A^{-1/2} + \left(\tfrac{r_{pin}}{r_{pcd}}\right)^2}}
   $$
 
 ---
