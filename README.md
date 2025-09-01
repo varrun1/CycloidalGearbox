@@ -109,63 +109,31 @@ python TestingAnalysis/RatioTesting.py
 These scripts help you size and analyze the cycloidal stage **before** building it. They live under `PythonCode/` (separate from `PythonCode/TestingAnalysis/` which is post‑testing).
 
 ### 1) Profile Generator — `profileGenerator.py`
-**Question:** Generate cycloid **XY profile** & gearbox diagram for pre-CAD visualization.
+**Function:** Generate cycloid **XY profile** & gearbox diagram for pre-CAD visualization.
 
 - **Inputs:** Fixed Ring Pin Count (N), Fixed Ring Pin PCD (D), eccentricity (e), fixed ring pin diameter d<sub>r</sub>, shaft angle ($\gamma$).
 - **Outputs:** static plot of cycloid profile centered at (0,0), static plot of gearbox diagram (with ring pins, output pins) in 2-disc configuration.
 - **Parametric form:**
-  $$
-  x = \frac{D}{2}\cos(\varphi) - \frac{d_r}{2}\cos(\varphi + \gamma) - e \cos(N\varphi)
-  $$
-  $$
-  y = -\frac{D}{2}\sin(\varphi) + \frac{d_r}{2}\sin(\varphi + \gamma) + e \sin(N\varphi)
-  $$
-  $$
-  \gamma = \frac{\sin(-n\varphi)}{\tfrac{D}{2eN} - \cos(-n\varphi)}
-  $$
----
+<p align="center">
+  <img src="docs/equation_cycloid2.png" alt="Parametric Cycloid Profile Equations" width="600"/>
+</p>
+
+
 
 ### 2) Pressure Angle — Closed Form — `PAcompute_cf.py`
-**Question:** Closed‑form expression for \(\alpha(\theta)\); what are its **max/min/RMS** values?
-
+**Function:** Compute closed‑form expression for \(\alpha(\theta)\); what are its **max/min/RMS** values? <br>
+**Definition:** The pressure angle is the angle between the contact force (normal) and the tangent to the motion, governing how efficiently force is transmitted through the gear teeth.
 - **Inputs:** same geometry as `profileGenerator.py`.
 - **Outputs:** 3 plots related to pressure angle analysis: 
     1. Pressure Angle vs. input rotation angle for any given lobe
     2. Instantaneous Multi-Tooth Average Pressure Angle - effective pressure angle at a given input rotation, considering **all simultaneously** engaged pins
     3. Pressure Angle vs. profile parameter - observe the effect of parameters (e, r<sub>pcd</sub>, etc) on Pressure Angle
 - **Closed‑form formula for Pressure Angle at k<sup>th</sup> lobe:**
-  α(θ) = ∠( contact normal , tangent to motion )
-  λ = r<sub>pcd</sub> / ( e · z<sub>p</sub> )
+<p align="center">
+  <img src="docs/PA_equation.png" alt="Pressure Angle Equations" width="600"/>
+</p>
 
-  θ<sub>k</sub> = θ + 2π (k − 1) / z<sub>p</sub>
 
-  A = 1 + λ<sup>2</sup> − 2λ cos(θ<sub>k</sub>)
-
-  α<sub>k</sub> = [ −sin(θ<sub>k</sub>) · A<sup>−1/2</sup> ]  
-     / √[ 1 − 2 ( r<sub>pin</sub> / r<sub>pcd</sub> ) ( λ − cos(θ<sub>k</sub>) ) · A<sup>−1/2</sup> + ( r<sub>pin</sub> / r<sub>pcd</sub> )<sup>2</sup> ]
-
-  $$
-  \alpha(\theta)=\angle\!\big(\,\text{contact normal},\ \text{tangent to motion}\,\big)
-  $$
-
-  $$
-  \lambda = \frac{r_{pcd}}{e \cdot z_p}
-  $$
-
-  $$
-  \theta_k = \theta + 2\pi \frac{k-1}{z_p}
-  $$
-
-  $$
-  A = 1 + \lambda^2 - 2\lambda \cos(\theta_k)
-  $$
-
-  $$
-  \alpha_k = \frac{-\sin(\theta_k)\,A^{-1/2}}
-  {\sqrt{1 - 2\left(\tfrac{r_{pin}}{r_{pcd}}\right)(\lambda - \cos(\theta_k))\,A^{-1/2} + \left(\tfrac{r_{pin}}{r_{pcd}}\right)^2}}
-  $$
-
----
 
 ### 3) Force Analysis — `FA.py`
 **Question:** How are contact forces shared across lobes/pins as the rotor turns? What are the peaks?
@@ -176,26 +144,12 @@ These scripts help you size and analyze the cycloidal stage **before** building 
   • Engaged‑count vs. \(\theta\), per‑lobe peak/mean forces, uniformity metrics (e.g., CV)  
   • Figures: heat map, engaged‑count plot, peak‑per‑lobe bar chart (save to `docs/figures/`)
 - **Core relations (fill in for your geometry):**
-  $$
+  $
   \sum_k F_t(k,\theta)\,r_k(\theta)=T_\text{out}, \qquad
   F_t(k,\theta)=F_n(k,\theta)\,\sin\!\big(\phi_k(\theta)\big)
-  $$
+  $
 
 ---
-
-### 4) Pressure‑Angle Visualization — `PA_viz.py`
-**Question:** What is the instantaneous **pressure angle** and geometry at contact as the rotor turns?
-
-- **Inputs:** geometry (radii, \(e\), counts), \(\theta\) sampling, optional clearances.
-- **Outputs:** plots of pressure angle \(\alpha(\theta)\), annotated geometry snapshots; optional CSV of \((\theta,\alpha)\).
-- **Definition (adapt sign convention as needed):**
-  $$
-  \alpha(\theta)=\angle\!\big(\,\text{contact normal},\ \text{tangent to motion}\,\big)
-  $$
-
----
-
-
 
 
 ## What the analysis scripts do
