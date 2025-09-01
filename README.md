@@ -42,13 +42,9 @@ It’s meant as a complete loop: **command motions → measure → analyze → i
 └─ README.md
 
 ```
-> Tip: add screenshots/figures in `docs/` and reference them here.
 
-Example screenshots (replace with your own):
-- `docs/repo-structure.png`
-- `docs/testing-scripts.png`
 
----
+
 
 ## Firmware overview (PlatformIO + STM32 Nucleo)
 
@@ -80,30 +76,6 @@ monitor_speed = 9600
 
 ---
 
-## Python analysis quick start
-
-Create a virtual environment and install deps:
-
-```bash
-python -m venv .venv
-# Windows
-.venv\Scripts\activate
-# macOS/Linux
-# source .venv/bin/activate
-
-pip install numpy pandas matplotlib
-```
-
-Run any script from the root of the repo, e.g.
-
-```bash
-python TestingAnalysis/Repeatability.py
-python TestingAnalysis/Backlash.py
-python TestingAnalysis/AccuracyTesting.py
-python TestingAnalysis/RatioTesting.py
-```
-
----
 ## Pre‑design analysis (`PythonCode/`)
 
 These scripts help you size and analyze the cycloidal stage **before** building it. They live under `PythonCode/` (separate from `PythonCode/TestingAnalysis/` which is post‑testing).
@@ -152,9 +124,9 @@ These scripts help you size and analyze the cycloidal stage **before** building 
 ---
 
 
-## What the analysis scripts do
+## Post-Testing Data Analysis (`TestingAnalysis/`)
 
-### Repeatability (`TestingAnalysis/Repeatability.py`)
+### Repeatability (`Repeatability.py`)
 **Question:** How tightly do repeated landings cluster when approaching from the **same direction**?
 
 - Input: one or more arrays of dial readings (mm) or pre‑converted arcminutes.
@@ -164,7 +136,7 @@ These scripts help you size and analyze the cycloidal stage **before** building 
 - Plots:
   - **Strip (dot) plot** per set with **mean ±1σ** (stacked duplicates, no random jitter).
 
-### Backlash (`TestingAnalysis/Backlash.py`)
+### Backlash (`Backlash.py`)
 **Question:** What’s the bidirectional **lost motion** at a target when approaching from CW vs CCW?
 
 - Provide paired arrays `A` (CW landing) and `B` (CCW landing) in **mm** or **arcmin**.
@@ -175,7 +147,7 @@ These scripts help you size and analyze the cycloidal stage **before** building 
   - Signed bias: **mean ± σ** of `d`.
   - Plots: paired A/B with **light‑grey connectors**; scatter of **|A−B|** per trial with mean line.
 
-### Accuracy (`TestingAnalysis/AccuracyTesting.py`)
+### Accuracy (`AccuracyTesting.py`)
 **Question:** How accurate is the output angle vs command (e.g., 1–5°)?
 
 - Convert dial travel (mm) at radius `r_mm` → degrees:
@@ -190,7 +162,6 @@ These scripts help you size and analyze the cycloidal stage **before** building 
 **Question:** How close is measured output speed to theoretical (nominal ratio × input speed)?
 
 - Report % differences and **MAPE**; slope of measured vs theoretical gives a **ratio calibration factor**.
-- ⚠️ Note: this is **not efficiency**. Efficiency needs torque as well (power in/out). See below.
 
 ---
 
