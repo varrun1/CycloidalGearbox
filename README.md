@@ -54,7 +54,7 @@ It’s meant as a complete loop: **command motions → measure → analyze → i
 - Key routines (in `motor_hal.c`):
   - `MoveByAngle(motor,motor_angle_rad, motor_rpm)` — speed ramping to specified motor RPM in the **motor-space**.
   - `MoveByAngleConst(motor, motor_angle_rad, motor_rpm)` — constant motor RPM at the **motor-space**.
-  - `MoveOutputByDeg_FixedMotorRPM(motor, out_deg, motor_rpm)` — output‑space move by specified angle using the reduction.
+  - `MoveOutputByDeg_FixedMotorRPM(motor, out_deg, motor_rpm)` — **output‑space** move by specified angle using the reduction.
   - `StepMotor(motor)` — ISR tick that updates step rate, pulses STEP, and stops when done.
   - **Test helpers** (used during measurements):
     - `Landing_FromCW(...)`, `Landing_FromCCW(...)` — retreat then re‑approach from a given side.
@@ -73,8 +73,6 @@ board = nucleo_f446re        // e.g. nucleo_f401re, nucleo_l476rg, nucleo_g431rb
 framework = stm32cube
 monitor_speed = 9600
 ```
-
----
 
 ## Pre‑design analysis (`PythonCode/`)
 
@@ -108,23 +106,26 @@ These scripts help you size and analyze the cycloidal stage **before** building 
 
 
 ### 3) Force Analysis — `FA.py`
-**Question:** How are contact forces shared across lobes/pins as the rotor turns? What are the peaks?
+**Function:** Compute contact forces shared across lobes/pins as the rotor turns? What are the peaks?
 
-- **Inputs (typical):** output torque \(T_\text{out}\), radii \(r\), lobe/pin count \(Z\), eccentricity \(e\), pin/roller radius \(r_p\), friction \(\mu\) (optional), sample angles \(\theta\in[0,2\pi)\).
+- **Inputs:** Input torque T<sub>in</sub>, shaft radius r<sub>shaft</sub>, eccentricity \(e\).
 - **Outputs:**  
-  • Normal force map \(F_n(k,\theta)\) (lobe \(k\) vs. angle \(\theta\))  
-  • Engaged‑count vs. \(\theta\), per‑lobe peak/mean forces, uniformity metrics (e.g., CV)  
-  • Figures: heat map, engaged‑count plot, peak‑per‑lobe bar chart (save to `docs/figures/`)
-- **Core relations (fill in for your geometry):**
-  $
-  \sum_k F_t(k,\theta)\,r_k(\theta)=T_\text{out}, \qquad
-  F_t(k,\theta)=F_n(k,\theta)\,\sin\!\big(\phi_k(\theta)\big)
-  $
+  1. Per-lobe force analysis (F<sub>r</sub>,F<sub>t</sub>,F<sub>n</sub>)
+  2. Per-lobe stress analysis
+  3. Per-disc Force distribution vs. shaft angle (i.e active lobes)
+  4. Normal force heat map vs. shaft angle
+  5. Force vector overlay on active lobes
+- **Sample force vector overlay plot:**
+<p align="center">
+  <img src="docs/ComponentOverlay_90deg.png" alt="Force vector overlay" width="500"/>
+</p>
 
 ---
 
 
 ## Post-Testing Data Analysis (`TestingAnalysis/`)
+
+These scripts help with post-testing data analysis to validate the gearbox design against the EDS. They live under `PythonCode/TestingAnalysis/`.
 
 ### Repeatability (`Repeatability.py`)
 **Question:** How tightly do repeated landings cluster when approaching from the **same direction**?
@@ -146,6 +147,9 @@ These scripts help you size and analyze the cycloidal stage **before** building 
   - Summary: mean / median / p95 / max of **|A−B|**.
   - Signed bias: **mean ± σ** of `d`.
   - Plots: paired A/B with **light‑grey connectors**; scatter of **|A−B|** per trial with mean line.
+<p align="center">
+  <img src="docs/backlashpairs.png" alt="Paired A/B Backlash test results" width="700"/>
+</p>
 
 ### Accuracy (`AccuracyTesting.py`)
 **Question:** How accurate is the output angle vs command (e.g., 1–5°)?
@@ -154,35 +158,17 @@ These scripts help you size and analyze the cycloidal stage **before** building 
   $\theta\;[^\circ] = \frac{s}{r}\cdot\frac{180}{\pi}$
 - Fit measured vs commanded. Report:
   - **slope** (scale error), **intercept** (offset), **R²**,
-  - **RMSE/MAE/Max|err|** (arcmin),
-  - **calibration factor** = `1/slope` (multiply commands to correct scale).
-- Plots: **Measured vs Commanded** (with ideal `y=x`) and **residuals** (points only).
+  - **RMSE/MAE/Max|err|** (arcmin)
+- Plots: **Measured vs Commanded** (with ideal `y=x`) and **residuals**.
 
 ### Ratio (`TestingAnalysis/RatioTesting.py`)
-**Question:** How close is measured output speed to theoretical (nominal ratio × input speed)?
+**Question:** How close is measured output speed to theoretical (input speed x output reduction)?
 
-- Report % differences and **MAPE**; slope of measured vs theoretical gives a **ratio calibration factor**.
+- Report % differences and **MAPE**.
+<p align="center">
+  <img src="docs/ratiotest.png" alt="Ratio testing" width="700"/>
+</p>
 
----
-
-## Handy conversions used throughout
-
-- **mm → degrees / arcminutes**
-  ```python
-  theta_deg    = (mm / r_mm) * (180.0/np.pi)
-  theta_arcmin = mm * (10800.0 / (np.pi * r_mm))  # direct mm→arcmin
-  ```
-
-- **Repeatability metrics (array `e` in arcmin)**
-  ```python
-  mean  = e.mean()
-  sigma = e.std(ddof=1)           # sample std
-  mae   = np.mean(np.abs(e))
-  rmse  = np.sqrt(np.mean(e**2))  # vs zero
-  maxabs= np.max(np.abs(e))
-  ```
-
----
 
 
 ## Dial‑indicator setup notes
@@ -194,7 +180,6 @@ These scripts help you size and analyze the cycloidal stage **before** building 
 
 ---
 
----
 
 ## Acknowledgements
 
