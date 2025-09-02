@@ -1,6 +1,6 @@
 #include "main.h"
 
-// ------- user-tunable knobs -------
+// ------- Input Data & Structs -------
 #define TARGET_RPM 200   // desired speed
 #define RUN_TIME_SEC 20  // run duration
 #define CCW_DIRECTION 1  // 1 = CCW, 0 = CW
@@ -8,6 +8,20 @@
 
 const int cycles = 2;          // how many CW landings to sample
 const double retreatDeg = 5.0; // back off amount between landings
+
+LoadCell cell_1 = {
+    .D_Port = GPIOA,
+    .D_Pin = GPIO_PIN_6, // D12-PA6
+    .SCK_Port = GPIOA,
+    .SCK_Pin = GPIO_PIN_7, // D11-PA7
+
+};
+
+#define MAX_SAMPLES 2000 // adjust depending on run length and sample rate
+
+uint32_t time_log[MAX_SAMPLES];
+float force_log[MAX_SAMPLES];
+uint16_t sample_count = 0;
 
 //  ----------------------------------
 
@@ -95,16 +109,32 @@ int main(void)
     MX_USART2_UART_Init(); // 9600 right now
     setbuf(stdout, NULL);  // disable buffering for stdout
     HAL_Delay(1000);       // give the monitor a moment after reset
-    printf("\r\nHELLO\r\n");
-    const char *raw = "RAW\r\n";
-    HAL_UART_Transmit(&huart2, (uint8_t *)raw, 5, 100);
+    printf("\r\nSerial Monitor Awake!\r\n");
+    // const char *raw = "RAW\r\n";
+    // HAL_UART_Transmit(&huart2, (uint8_t *)raw, 5, 100);
 
     // Enable GPIO clocks BEFORE calling Motors_Init (Motor_Init uses GPIOB/GPIOA)
     __HAL_RCC_GPIOA_CLK_ENABLE();
     __HAL_RCC_GPIOB_CLK_ENABLE();
 
-    // Initialize your motor HAL (sets up GPIO and timers, incl. TIM3 IRQ for stepping)
+    // Initialize motor HAL and load cell HAL
     Motors_Init();
+
+    // Initialize load cell HAL
+    LoadCell_Init(&cell_1, 128);
+    // LoadCell_Tare(&cell_1, 16);
+    //  Run calibration with known weight
+    CalibrateLoadCell(&cell_1, 9.81f); // 1 kg weight = 9.81 N
+
+    // Perform load cell health check
+    if (!LoadCell_HealthCheck(&cell_1))
+    {
+        printf("Health check failed, aborting motor run!\r\n");
+        while (1)
+        {
+            HAL_Delay(500);
+        } // halt or blink LED
+    }
 
     // FOR MOTOR-SPACE COMMANDS
     /*
@@ -135,7 +165,17 @@ int main(void)
     // Block until the motion completes (StepMotor() clears isMoving at the end)
     while (motor1.isMoving)
     {
-        // you can sleep lightly to reduce CPU load
+        if (LoadCell_DataReady(&cell_1) && sample_count < MAX_SAMPLES)
+        {
+            uint32_t t = HAL_GetTick();
+            float F = LoadCell_ReadNewton(&cell_1);
+
+            // Store values
+            time_log[sample_count] = t;
+            force_log[sample_count] = F;
+            sample_count++;
+        }
+
         HAL_Delay(1);
     }
 

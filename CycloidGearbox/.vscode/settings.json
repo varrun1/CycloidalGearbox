@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "loadcell_hal.h": "c",
+        "stm32f4xx_hal.h": "c"
+    }
+}

@@ -3,6 +3,7 @@
 
 #include "stm32f4xx_hal.h"
 #include "motor_hal.h" // exposes Motor, Motors_Init, MoveByAngle, etc.
+#include "loadcell_hal.h"
 
 #ifdef __cplusplus
 extern "C"
