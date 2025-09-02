@@ -6,7 +6,7 @@
 #define CCW_DIRECTION 1  // 1 = CCW, 0 = CW
 #define output_angle 3.0 // in degrees
 
-const int cycles = 10;         // how many CW landings to sample
+const int cycles = 2;          // how many CW landings to sample
 const double retreatDeg = 5.0; // back off amount between landings
 
 //  ----------------------------------
