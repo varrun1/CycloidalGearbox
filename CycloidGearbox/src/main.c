@@ -155,12 +155,27 @@ int main(void)
 
     uint32_t t0_ms = HAL_GetTick(); // just before starting the move
 
+    while (1)
+    {
+        if (LoadCell_DataReady(&cell_1) && sample_count < MAX_SAMPLES)
+        {
+            uint32_t t = HAL_GetTick();
+            float F = LoadCell_ReadNewton(&cell_1);
+            printf("Measure Force:%.2f \n", (double)F);
+
+            // Store values
+            time_log[sample_count] = t;
+            force_log[sample_count] = F;
+            sample_count++;
+        }
+    }
+
     // FUNCTION CALLS
     //(void)MoveByAngle(&motor1, angle, TARGET_RPM);
     //(void)MoveByAngleConst(&motor1, angle, TARGET_RPM);
     //(void)MoveByOutputAngle(&motor1, output_angle * (M_PI / 180.0), TARGET_RPM); // func call to desired output angle - output space
     // RepeatabilityTest_OutputCW_FixedRPM(&motor1, cycles, retreatDeg, TARGET_RPM);
-    BacklashTest_FixedRPM(&motor1, cycles, retreatDeg, TARGET_RPM);
+    // BacklashTest_FixedRPM(&motor1, cycles, retreatDeg, TARGET_RPM);
 
     // Block until the motion completes (StepMotor() clears isMoving at the end)
     while (motor1.isMoving)
@@ -169,6 +184,7 @@ int main(void)
         {
             uint32_t t = HAL_GetTick();
             float F = LoadCell_ReadNewton(&cell_1);
+            printf("Measure Force:%.2f", (double)F);
 
             // Store values
             time_log[sample_count] = t;
