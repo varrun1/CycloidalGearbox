@@ -120,8 +120,8 @@ def shaftForces(T_input, r_shaft, Sy):
     #compute allowable stress using Von mises & Tresca critera
     t_allow_VM = Sy/np.sqrt(3)
     t_allow_Tresca = Sy/2
-    FOS_tres = (t_allow_Tresca/(tau_max*SF))
-    FOS_VM = (t_allow_VM/(tau_max*SF))
+    FOS_tres = (t_allow_Tresca/(tau_max*conversion*SF))
+    FOS_VM = (t_allow_VM/(tau_max*conversion*SF))
     print('VM Allowable Stress (MPa): ', np.round(t_allow_VM, 4))
     print('VM FOS:', np.round(FOS_VM,4))
     print('Tresca Allowable Stress (MPa): ', np.round(t_allow_Tresca,4))
