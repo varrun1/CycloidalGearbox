@@ -13,7 +13,7 @@
 #endif
 
 #define STEPS_PER_REV 3200 // 1/16th stepping
-#define MIN_RPM 70
+#define MIN_RPM 50
 #define MAX_RPM 800
 #define Output_Reduction 29
 

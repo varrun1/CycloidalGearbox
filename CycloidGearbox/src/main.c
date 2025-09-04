@@ -1,10 +1,10 @@
 #include "main.h"
 
 // ------- Input Data & Structs -------
-#define TARGET_RPM 200   // desired speed
+#define TARGET_RPM 75    // desired speed
 #define RUN_TIME_SEC 20  // run duration
 #define CCW_DIRECTION 1  // 1 = CCW, 0 = CW
-#define output_angle 3.0 // in degrees
+#define output_angle 120 // in degrees
 
 const int cycles = 2;          // how many CW landings to sample
 const double retreatDeg = 5.0; // back off amount between landings
@@ -18,6 +18,7 @@ LoadCell cell_1 = {
 };
 
 #define MAX_SAMPLES 2000 // adjust depending on run length and sample rate
+const double loadcell_scale = 44616.391;
 
 uint32_t time_log[MAX_SAMPLES];
 float force_log[MAX_SAMPLES];
@@ -122,9 +123,11 @@ int main(void)
 
     // Initialize load cell HAL
     LoadCell_Init(&cell_1, 128);
-    // LoadCell_Tare(&cell_1, 16);
-    //  Run calibration with known weight
-    CalibrateLoadCell(&cell_1, 9.81f); // 1 kg weight = 9.81 N
+    LoadCell_Tare(&cell_1, 16);
+    LoadCell_SetScale(&cell_1, loadcell_scale);
+    //   Run calibration with known weight
+    // float known_force = 0.265f * 9.81f;
+    // CalibrateLoadCell(&cell_1, known_force); // 1 kg weight = 9.81 N
 
     // Perform load cell health check
     if (!LoadCell_HealthCheck(&cell_1))
@@ -151,17 +154,18 @@ int main(void)
 
     // FOR OUTPUT-SPACE COMMAND
     printf("\nOutput-Space Commands");
-    // printf("\r\nCMD: rpm=%.1f,  angle=%.1f deg\r\n",(double)TARGET_RPM, (double)output_angle);
+    printf("\r\nCMD: rpm=%.1f,  angle=%.1f deg\r\n", (double)TARGET_RPM, (double)output_angle);
 
     uint32_t t0_ms = HAL_GetTick(); // just before starting the move
 
+    /*
     while (1)
     {
         if (LoadCell_DataReady(&cell_1) && sample_count < MAX_SAMPLES)
         {
             uint32_t t = HAL_GetTick();
             float F = LoadCell_ReadNewton(&cell_1);
-            printf("Measure Force:%.2f \n", (double)F);
+            printf("Measure Force:%.4f \n", (double)F);
 
             // Store values
             time_log[sample_count] = t;
@@ -169,11 +173,12 @@ int main(void)
             sample_count++;
         }
     }
+    */
 
     // FUNCTION CALLS
     //(void)MoveByAngle(&motor1, angle, TARGET_RPM);
     //(void)MoveByAngleConst(&motor1, angle, TARGET_RPM);
-    //(void)MoveByOutputAngle(&motor1, output_angle * (M_PI / 180.0), TARGET_RPM); // func call to desired output angle - output space
+    (void)MoveByOutputAngle(&motor1, output_angle * (M_PI / 180.0), TARGET_RPM); // func call to desired output angle - output space
     // RepeatabilityTest_OutputCW_FixedRPM(&motor1, cycles, retreatDeg, TARGET_RPM);
     // BacklashTest_FixedRPM(&motor1, cycles, retreatDeg, TARGET_RPM);
 
@@ -184,7 +189,7 @@ int main(void)
         {
             uint32_t t = HAL_GetTick();
             float F = LoadCell_ReadNewton(&cell_1);
-            printf("Measure Force:%.2f", (double)F);
+            printf("Measure Force:%.4f \n", (double)F);
 
             // Store values
             time_log[sample_count] = t;
@@ -206,6 +211,20 @@ int main(void)
            (double)revs, (double)(angle * 180.0 / M_PI));
     */
     printf("Elapsed = %.3f s\r\n", elapsed_s);
+
+    float max_force = force_log[0];
+    uint32_t max_time = time_log[0];
+
+    for (uint16_t i = 1; i < sample_count; i++)
+    {
+        if (force_log[i] > max_force)
+        {
+            max_force = force_log[i];
+            max_time = time_log[i];
+        }
+    }
+
+    printf("Max Force = %.2f N at t = %lu ms\r\n", max_force, max_time);
 
     // Idle
     while (1)

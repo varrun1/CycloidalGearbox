@@ -177,6 +177,7 @@ void CalibrateLoadCell(LoadCell *hx, float known_force_N)
 
     int32_t raw = LoadCell_ReadAverage(hx, 16);
     float scale = (raw - hx->offset) / known_force_N;
+    LoadCell_SetScale(hx, scale);
 
     printf("Calibration done.\r\n");
     printf("Raw with load = %ld\r\n", (long)raw);
