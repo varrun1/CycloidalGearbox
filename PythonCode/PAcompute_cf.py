@@ -179,11 +179,11 @@ def computePA(thetas, e, r_pin, r_pcd, zp):
     
     theta_max, theta_min, max_PA, min_PA = maxMinPA(alpha, thetas)
 
-    plt.plot(np.degrees(thetas), np.degrees(alpha), label=f'k={1}')
+    plt.plot(np.degrees(thetas), np.degrees(alpha), label=f'k={1}', lw=2.5)
     plt.axvline(theta_max, color = 'red', ls = '--')
     plt.axvline(theta_min, color = 'green', ls = '--')
-    plt.plot(theta_max,max_PA,marker = 'o', markersize = '5', markeredgecolor = 'red')
-    plt.plot(theta_min,min_PA,marker = 'o', markersize = '5', markeredgecolor = 'green')
+    plt.plot(theta_max,max_PA,marker = 'o', markersize = '6', markeredgecolor = 'red')
+    plt.plot(theta_min,min_PA,marker = 'o', markersize = '6', markeredgecolor = 'green')
     plt.xlabel('Rotation Angle θ (°)')
     plt.ylabel('Pressure Angle αₖ (°)')
     plt.title('Pressure Angles - Closed Form')
@@ -224,7 +224,7 @@ def main():
     
     #Available functions
     computePA(thetas, e, r_pin, r_pcd, zp) #compute single-lobe Pressure angle for profile 
-    lobePlot(thetas, e, r_pin, r_pcd, zp) # plots all lobes' pressure angle variation 
+    #lobePlot(thetas, e, r_pin, r_pcd, zp) # plots all lobes' pressure angle variation 
     #comparParam(thetas, e, r_pin, r_pcd, zp) #plots parameter comparison 
     #compareProfile(thetas, e, r_pin, r_pcd, zp) 
 
