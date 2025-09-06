@@ -111,8 +111,6 @@ int main(void)
     setbuf(stdout, NULL);  // disable buffering for stdout
     HAL_Delay(1000);       // give the monitor a moment after reset
     printf("\r\nSerial Monitor Awake!\r\n");
-    // const char *raw = "RAW\r\n";
-    // HAL_UART_Transmit(&huart2, (uint8_t *)raw, 5, 100);
 
     // Enable GPIO clocks BEFORE calling Motors_Init (Motor_Init uses GPIOB/GPIOA)
     __HAL_RCC_GPIOA_CLK_ENABLE();
@@ -125,7 +123,7 @@ int main(void)
     LoadCell_Init(&cell_1, 128);
     LoadCell_Tare(&cell_1, 16);
     LoadCell_SetScale(&cell_1, loadcell_scale);
-    //   Run calibration with known weight
+    // Run calibration with known weight
     // float known_force = 0.265f * 9.81f;
     // CalibrateLoadCell(&cell_1, known_force); // 1 kg weight = 9.81 N
 
@@ -158,7 +156,7 @@ int main(void)
 
     uint32_t t0_ms = HAL_GetTick(); // just before starting the move
 
-    /*
+    /* Load Cell initial testing code
     while (1)
     {
         if (LoadCell_DataReady(&cell_1) && sample_count < MAX_SAMPLES)
@@ -271,5 +269,4 @@ int _write(int file, char *data, int len)
 void SysTick_Handler(void)
 {
     HAL_IncTick(); // increments HAL tick for HAL_Delay / timeouts
-    // HAL_SYSTICK_IRQHandler(); // optional, only if you use HAL's SysTick callbacks
 }

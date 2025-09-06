@@ -113,7 +113,6 @@ void LoadCell_Tare(LoadCell *hx, uint8_t n)
 
 void LoadCell_SetScale(LoadCell *hx, float counts_per_N)
 {
-    // counts_per_N: how many ADC counts correspond to 1 Newton (or per kg if you prefer)
     if (counts_per_N == 0.0f)
         counts_per_N = 1.0f;
     hx->scale = counts_per_N;
@@ -121,7 +120,7 @@ void LoadCell_SetScale(LoadCell *hx, float counts_per_N)
 
 float LoadCell_ReadNewton(LoadCell *hx)
 {
-    // Average a few samples to reduce noise (tweak 8 as needed)
+    // Average a few samples to reduce noise
     int32_t avg = LoadCell_ReadAverage(hx, 8);
     return (avg - hx->offset) / hx->scale;
 }
@@ -145,7 +144,7 @@ int LoadCell_HealthCheck(LoadCell *hx)
 
     // 2. Take a few samples
     int32_t s1 = LoadCell_ReadRaw(hx);
-    HAL_Delay(50); // HX711 needs 100 ms at 10 Hz, 12.5 ms at 80 Hz
+    HAL_Delay(50);
     int32_t s2 = LoadCell_ReadRaw(hx);
 
     // 3. Sanity check values
@@ -157,7 +156,6 @@ int LoadCell_HealthCheck(LoadCell *hx)
     if (s1 == s2)
     {
         printf("LoadCell WARNING: No variation detected\r\n");
-        // not fatal, but may mean sensor disconnected
     }
 
     printf("LoadCell OK: raw=%ld..%ld\r\n", (long)s1, (long)s2);

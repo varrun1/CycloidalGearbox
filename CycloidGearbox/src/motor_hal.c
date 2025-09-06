@@ -1,6 +1,5 @@
 #include "stm32f4xx_hal.h"
 #include "motor_hal.h"
-// #include "controls.h"
 
 ADC_HandleTypeDef hadc1;
 TIM_HandleTypeDef htim1;
@@ -12,12 +11,7 @@ TIM_HandleTypeDef htim7;
 void Motor_Init(Motor motor);
 void StepMotor(Motor *motor);
 static void TIM3_Init(void);
-// static void TIM4_Init(void);
-// static void TIM7_Init(void);
 void TIM3_IRQHandler(void);
-// void TIM4_IRQHandler(void);
-// void TIM7_IRQHandler(void);
-//  static void MX_ADC1_Init(void); // Not currently used, can delete later
 static void MX_TIM2_Init(void);
 
 // Motor Objects
@@ -127,18 +121,6 @@ double MoveByAngle(Motor *motor, double angle, double speedRPM)
     // Start at the min rpm
     motor->currentRPM = MIN_RPM;
 
-    /*
-    // If we are in manual, set speed to desired speed right away
-    if (state.manual)
-    {
-        motor->currentRPM = speedRPM;
-    }
-    else
-    {
-        motor->currentRPM = MIN_RPM;
-    }
-    */
-
     float timePerStep = 60.0 / (motor->currentRPM * STEPS_PER_REV * motor->reduction); // Time per step in seconds
     uint32_t timerPeriod = (uint32_t)((timePerStep * 1000000) / 2) - 1;                // Time per toggle, in microseconds
 
@@ -187,24 +169,22 @@ double MoveByAngleConst(Motor *motor, double angle, double speedRPM)
     // ---------------------------------------------------
 
     // Timer period for constant step rate.
-    // If your TIM3 tick = 1 µs, ARR is in microseconds.
     // One full STEP = high + low => two toggles per step:
     float timePerStep_s = 60.0f / (motor->currentRPM * STEPS_PER_REV * motor->reduction);
     uint32_t timerPeriod = (uint32_t)((timePerStep_s * 1e6f) / 2.0f) - 1u;
 
-    // (Optional) clamp to keep a minimum pulse width
+    // clamp to keep a minimum pulse width
     if (timerPeriod < 50u)
         timerPeriod = 50u;
 
-    // Signed angle actually commanded (for your return)
+    // Signed angle actually commanded
     double angleToComplete = (motor->stepsToComplete / (double)STEPS_PER_REV) / motor->reduction * 2.0 * M_PI;
     if (motor->dir == CW)
         angleToComplete = -angleToComplete;
 
     // Program timer and start
-    // (Consider resetting the counter before start to get a clean first pulse)
     if (motor->name == motor1.name)
-    { // (see note below)
+    {
         __HAL_TIM_SET_AUTORELOAD(&htim3, timerPeriod);
         __HAL_TIM_SET_COUNTER(&htim3, 0);
         HAL_TIM_Base_Start_IT(&htim3);
@@ -256,11 +236,11 @@ double MoveByOutputAngle(Motor *motor, double angle, double speedRPM)
     float timePerStep_s = 60.0f / (motor->currentRPM * STEPS_PER_REV);
     uint32_t timerPeriod = (uint32_t)((timePerStep_s * 1e6f) / 2.0f) - 1u;
 
-    // (Optional) clamp to keep a minimum pulse width
+    // clamp to keep a minimum pulse width
     if (timerPeriod < 50u)
         timerPeriod = 50u;
 
-    // Signed angle actually commanded (for your return)
+    // Signed angle actually commanded
     double angleToComplete = ((double)motor->stepsToComplete / (STEPS_PER_REV * Output_Reduction)) * 2.0 * M_PI;
     if (motor->dir == CW)
         angleToComplete = -angleToComplete;
@@ -343,7 +323,7 @@ void RepeatabilityTest_OutputCW_FixedRPM(Motor *m, int cycles, double retreat_de
     {
         printf("\r\n[CYCLE %d]\r\n", i);
         Landing_FromCW(m, retreat_deg, motor_rpm);
-        // >>> Read indicator here (log value for cycle i) <<<
+        // Read indicator here
     }
     printf("\r\n=== Test complete ===\r\n");
 }
@@ -354,7 +334,6 @@ void BacklashTest_FixedRPM(Motor *m, int cycles, double retreat_deg, double moto
 
     printf("\n=== Backlash Test (fixed motor RPM) ===\n");
     printf("Start ON probe, zeroed. cycles=%d, retreat=%.3f deg, motorRPM=%.1f\n", cycles, retreat_deg, motor_rpm);
-    // printf("Convert dial Δ(mm) → arcmin: Δ(mm) × %.6f (arcmin/mm)\n", mm_to_arcmin);
     printf("Sequence per cycle: CW-landing (read A), CCW-landing (read B) → backlash = |A-B|.\n");
 
     for (int i = 1; i <= cycles; ++i)
@@ -370,8 +349,6 @@ void BacklashTest_FixedRPM(Motor *m, int cycles, double retreat_deg, double moto
         Landing_FromCCW(m, retreat_deg, motor_rpm);
         // >>> Read dial here → record B_i (mm)
         printf("Read dial here → record B_i (mm)\n");
-
-        // Tip for your log: Backlash_i_arcmin = fabs(A_i - B_i) * mm_to_arcmin
     }
 
     printf("\n=== Backlash Test complete ===\n");
@@ -390,14 +367,13 @@ void StepMotor(Motor *motor)
         return; // <-- critical
     }
 
-    // Gain scheduling (unchanged)
+    // Gain scheduling
     if (motor->stepsToComplete > motor->stepsToSpeedUp)
         motor->currentRPM += motor->slope;
     else if (motor->stepsToComplete < motor->stepsToSlowDown)
         motor->currentRPM -= motor->slope;
 
     // Recompute period
-    // Recompute period (works for BOTH ramped and constant-speed)
     float timePerStep = 60.0f / (motor->currentRPM * STEPS_PER_REV * motor->reduction);
     int32_t timerPeriod = (int32_t)((timePerStep * 1000000.0f) / 2.0f) - 1;
     if (timerPeriod < 1)
@@ -406,13 +382,11 @@ void StepMotor(Motor *motor)
         timerPeriod = 0xFFFF;
 
     if (motor == &motor1)
-    { // safer than comparing names
+    {
         uint32_t newARR = (uint32_t)timerPeriod;
         if (htim3.Instance->ARR != newARR)
         {
             __HAL_TIM_SET_AUTORELOAD(&htim3, newARR);
-            // DO NOT reset the counter here; ARR preload will apply on the next update automatically
-            // DO NOT write EGR=UG here either; let it update naturally at the next event
         }
     }
 
@@ -455,62 +429,6 @@ void TIM3_IRQHandler(void)
     }
 }
 
-/*
-static void TIM4_Init(void)
-{
-    __HAL_RCC_TIM4_CLK_ENABLE();
-
-    htim4.Instance = TIM4;
-    htim4.Init.Prescaler = (uint32_t)((SystemCoreClock / 1000000) - 1); // 1 MHz clock
-    htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
-    htim4.Init.Period = 0xFFFF; // Max value, update frequency will be set in stepMotor()
-    htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-    HAL_TIM_Base_Init(&htim4);
-
-    HAL_NVIC_SetPriority(TIM4_IRQn, 0, 0);
-    HAL_NVIC_EnableIRQ(TIM4_IRQn);
-}
-
-void TIM4_IRQHandler(void)
-{
-    if (__HAL_TIM_GET_FLAG(&htim4, TIM_FLAG_UPDATE) != RESET)
-    {
-        if (__HAL_TIM_GET_IT_SOURCE(&htim4, TIM_IT_UPDATE) != RESET)
-        {
-            __HAL_TIM_CLEAR_IT(&htim4, TIM_IT_UPDATE);
-            StepMotor(&motor2);
-        }
-    }
-}
-
-static void TIM7_Init(void)
-{
-    __HAL_RCC_TIM7_CLK_ENABLE();
-
-    htim7.Instance = TIM7;
-    htim7.Init.Prescaler = (uint32_t)((SystemCoreClock / 1000000) - 1); // 1 MHz clock
-    htim7.Init.CounterMode = TIM_COUNTERMODE_UP;
-    htim7.Init.Period = 0xFFFF; // Max value, update frequency will be set in stepMotor()
-    htim7.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-    HAL_TIM_Base_Init(&htim7);
-
-    HAL_NVIC_SetPriority(TIM7_IRQn, 0, 0);
-    HAL_NVIC_EnableIRQ(TIM7_IRQn);
-}
-
-void TIM7_IRQHandler(void)
-{
-    if (__HAL_TIM_GET_FLAG(&htim7, TIM_FLAG_UPDATE) != RESET)
-    {
-        if (__HAL_TIM_GET_IT_SOURCE(&htim7, TIM_IT_UPDATE) != RESET)
-        {
-            __HAL_TIM_CLEAR_IT(&htim7, TIM_IT_UPDATE);
-            StepMotor(&motorz);
-        }
-    }
-}
-*/
-
 /**
  * @brief Will stop all motors immediately.
  *
@@ -518,51 +436,7 @@ void TIM7_IRQHandler(void)
 void StopMotors(void)
 {
     HAL_TIM_Base_Stop_IT(&htim3);
-    // HAL_TIM_Base_Stop_IT(&htim4);
-    // HAL_TIM_Base_Stop_IT(&htim7);
 }
-
-/**
- * @brief Homes the motors.
- *
- */
-/*
-void HomeMotors(void)
-{
-    printf("Homing...\n\r");
-    updateStateMachine("Homing");
-
-    gripperClose(&gripper);
-    MoveByDist(&motorz, -125.0, 20.0);
-    MoveByAngle(&motor1, 8.0, 5.0);
-    MoveByAngle(&motor2, 8.0, 5.0);
-
-    while (motor1.isMoving || motor2.isMoving || motorz.isMoving)
-    {
-        HAL_Delay(1);
-    }
-    HAL_Delay(1000);
-
-    // Move back 6 degrees
-    double distZ = MoveByDist(&motorz, 2.0, 5.0);
-    double theta1 = MoveByAngle(&motor1, -6.0 / 180.0 * M_PI, 1.0);
-    double theta2 = MoveByAngle(&motor2, -6.0 / 180.0 * M_PI, 1.0);
-
-    while (motor1.isMoving || motor2.isMoving || motorz.isMoving)
-    {
-        HAL_Delay(1);
-    }
-
-    // Update the state machine
-    updateStateMachine("Auto Wait");
-    state.theta1 = motor1.thetaMax + theta1;
-    state.theta2 = motor2.thetaMax + theta2;
-    state.currentZ = motorz.thetaMin + distZ;
-    CalculateCartesianCoords(state.theta1, state.theta2, &state.x, &state.y);
-    printf("Current Coords in x-y:");
-    PrintCaresianCoords(state.x, state.y);
-}
-*/
 
 static void MX_TIM2_Init(void)
 {
