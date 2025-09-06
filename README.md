@@ -17,9 +17,11 @@ It’s meant as a complete loop: **command motions → measure → analyze → i
 │  ├─ platformio.ini               # board/framework/upload settings
 │  ├─ src/
 │  │  ├─ main.c                    # main source code
+│  │  ├─ loadcell_hal.c            # loac cell source code
 │  │  └─ motor_hal.c               # source code for stepper motor functions
 │  ├─ include/
 │  │  ├─ main.h
+│  │  ├─ loadcell_hal.h
 │  │  └─ motor_hal.h
 │  └─ lib/                         # reusable libs
 │  └─ .pio/                        # build artifacts (ignored)
@@ -31,12 +33,12 @@ It’s meant as a complete loop: **command motions → measure → analyze → i
 │  │  ├─ RatioTesting.py           # speed/ratio comparisons
 │  │  ├─ Repeatability.py          # same-direction landing repeatability
 │  │  └─ ShaftTesting.py           # empirical shaft torsion testing
+│  ├─ Archive/                     # semi-functional scripts
+│  │  ├─ viz_attempt.py            # Misc viz utilities
+│  │  └─ PA_viz.py                 # pre-design: profile/geometry visualization
 │  ├─ FA.py                        # pre-design: force analysis tool
-│  ├─ PA_viz.py                    # pre-design: profile/geometry visualization
 │  ├─ PAcompute_cf.py              # pre-design: pressure angle analysis - closed form
-│  ├─ PAcompute_vec.py             # pre-design: pressure angle analysis - vector form
-│  ├─ profileGenerator.py          # pre-design: generate cycloidal profiles
-│  └─ viz_attempt.py               # Misc viz utilities
+│  └─ profileGenerator.py          # pre-design: generate cycloidal profiles
 │
 ├─ docs/                           # images/figures for README 
 └─ README.md
