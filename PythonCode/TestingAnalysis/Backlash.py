@@ -29,9 +29,6 @@ set1_A = np.array([-0.05,-0.06,-0.06,-0.05,-0.05,-0.05,-0.05,-0.06,-0.06,-0.06])
 set1_B = np.array([-0.04,-0.05,-0.04,-0.04,-0.04,-0.04,-0.04,-0.05,-0.05,-0.05]) 
 trials = np.arange(1, set1_A.size+1)
 
-#set2_A = np.array([0,0,0,0,0,0,0,0,0,0]) 
-#set2_B = np.array([0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02]) 
-
 #Convert measured data
 set1_A_arcmin = mm_to_deg(set1_A)*arcmin_conversion
 set1_B_arcmin = mm_to_deg(set1_B)*arcmin_conversion
@@ -45,7 +42,7 @@ print('Measured Backlash:',arcmin_measured)
 print('Measured Abs Backlash:',arcmin_measured_abs) 
 labels  = ["Set 1"]
 
-# 1) Paired points with connectors (see each trial’s A vs B)
+# 1) Paired points with connectors ( trial’s A vs B)
 plt.figure()
 plt.plot(trials, set1_A_arcmin, marker="o", linestyle="none", label="CCW landing (A)")
 plt.plot(trials, set1_B_arcmin, marker="s", linestyle="none", label="CW landing (B)")

@@ -27,7 +27,6 @@ def metrics_row(y_land):
 #Measured datasets
 set1 = np.array([-0.01,-0.01,0,-0.01,0,0,0,-0.01,-0.01,-0.01]) 
 set2 = np.array([-0.01,0,0,-0.02,-0.01,-0.01,-0.01,-0.01,-0.01,-0.01]) 
-#set3 = np.array([0,0,-0.01,-0.01,-0.02,-0.05,-0.05,-0.07,-0.08,-0.10]) 
 
 #Convert measured data
 repeatability_deg = mm_to_deg(np.concatenate([set1,set2])) #converted to 1D array (1x20)

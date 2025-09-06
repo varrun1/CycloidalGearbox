@@ -166,7 +166,7 @@ def plot_static_disc_forces_numbered(
     pcd_circle = plt.Circle((0, 0), radius = r_pcd, fill = False,  color='black', ls = '--')
     ax.add_patch(pcd_circle)
 
-    # Scaling-related stuff
+    # Scaling stuff
     max_force = max(Fr.max(), Ft.max(), Fn.max())
     arrow_scale = r_pcd / max_force * 0.5
 
@@ -199,7 +199,7 @@ def plot_static_disc_forces_numbered(
                   un[0]*Fn0*arrow_scale, un[1]*Fn0*arrow_scale,
                   angles='xy', scale_units='xy', scale=2.5,color='C2', width=0.005)
 
-        # lobe numbering offset for each vector. change 0.20 to control offset
+        # lobe numbering offset for each vector
         num_off = un * (r_pcd * 0.20)
         ax.text(xk + num_off[0],
                 yk + num_off[1],
