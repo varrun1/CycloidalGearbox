@@ -41,6 +41,7 @@ It’s meant as a complete loop: **command motions → measure → analyze → i
 │  └─ profileGenerator.py          # pre-design: generate cycloidal profiles
 │
 ├─ docs/                           # images/figures for README 
+├─ Final_BOM.xlsx                  # Final BOM excel file for sourced parts 
 └─ README.md
 
 ```
